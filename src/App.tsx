@@ -77,7 +77,7 @@ export default function App() {
         flexDirection: 'column',
         height: '100vh',
         overflow: 'hidden',
-        background: 'var(--sf-bg)',
+        background: 'var(--sf-body-bg)',
         color: 'var(--sf-text)',
       }}
     >
@@ -92,7 +92,9 @@ export default function App() {
           style={{
             flex: 1,
             overflow: 'auto',
-            padding: 24,
+            padding: '20px 28px',
+            background: 'var(--sf-body-bg)',
+            minWidth: 0,
           }}
         >
           {renderContent()}

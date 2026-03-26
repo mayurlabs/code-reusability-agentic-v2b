@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  AlertTriangle,
+  Download,
+  ChevronDown,
+  ChevronUp,
+  Shield,
+  ArrowUpRight,
+} from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -11,6 +20,7 @@ import {
 } from 'recharts';
 import { scanReports, clusters, scoreHistory } from '../data/mockData';
 import type { Cluster } from '../data/mockData';
+import { useAppContext } from '../context/AppContext';
 
 interface ScanReportProps {
   reportId: string;
@@ -39,10 +49,12 @@ const FRIENDLY_RECOMMENDATIONS: Record<string, string> = {
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  High: '#c23934',
+  High: '#ea001e',
   Medium: '#fe9339',
   Low: '#2e844a',
 };
+
+const PRIORITY_ORDER: Record<string, number> = { High: 0, Medium: 1, Low: 2, 'N/A': 3 };
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString('en-US', {
@@ -69,7 +81,7 @@ function extractLinesNumber(reduction: string): string {
 }
 
 function formatInvocations(n: number): string {
-  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   return String(n);
 }
 
@@ -80,7 +92,8 @@ function SkeletonBlock({ height, width }: { height: number; width?: string }) {
         height,
         width: width || '100%',
         borderRadius: 6,
-        background: 'linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%)',
+        background:
+          'linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%)',
         backgroundSize: '200% 100%',
         animation: 'shimmer 1.5s ease-in-out infinite',
       }}
@@ -104,15 +117,38 @@ const metaValueStyle: React.CSSProperties = {
 };
 
 export default function ScanReport({ reportId, onBack }: ScanReportProps) {
+  const { showToast } = useAppContext();
   const [loaded, setLoaded] = useState(false);
+  const [expandedFindings, setExpandedFindings] = useState<Set<string>>(new Set());
+
+  const report = scanReports.find((r) => r.id === reportId) || scanReports[0];
+
+  const sortedClusters = [...clusters].sort(
+    (a, b) => (PRIORITY_ORDER[a.runtimePriority] ?? 3) - (PRIORITY_ORDER[b.runtimePriority] ?? 3)
+  );
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoaded(true), 800);
+    const timer = setTimeout(() => {
+      setLoaded(true);
+      const topIds = sortedClusters.slice(0, 3).map((c) => c.id);
+      setExpandedFindings(new Set(topIds));
+    }, 800);
     return () => clearTimeout(timer);
   }, []);
 
-  const report = scanReports.find((r) => r.id === reportId) || scanReports[0];
-  const detailedCluster = clusters.find((c) => c.id === 'cl-001')!;
+  const toggleFinding = (id: string) => {
+    setExpandedFindings((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleDownload = () => {
+    showToast('Preparing PDF export…', 'info');
+    setTimeout(() => showToast('PDF downloaded successfully', 'success'), 1500);
+  };
 
   if (!loaded) {
     return (
@@ -124,29 +160,34 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
           }
         `}</style>
         <div style={{ marginBottom: 16 }}>
-          <SkeletonBlock height={16} width="260px" />
+          <SkeletonBlock height={14} width="320px" />
         </div>
-        <div className="sf-card" style={{ marginBottom: 20 }}>
-          <SkeletonBlock height={24} width="400px" />
+        <div className="sf-card" style={{ marginBottom: 20, padding: 24 }}>
+          <SkeletonBlock height={24} width="420px" />
+          <div style={{ marginTop: 16 }}>
+            <SkeletonBlock height={64} />
+          </div>
+        </div>
+        <div className="sf-card" style={{ marginBottom: 20, padding: 24 }}>
+          <SkeletonBlock height={18} width="200px" />
+          <div style={{ marginTop: 14, display: 'flex', gap: 16 }}>
+            {[1, 2, 3, 4].map((i) => (
+              <SkeletonBlock key={i} height={72} width="25%" />
+            ))}
+          </div>
           <div style={{ marginTop: 16 }}>
             <SkeletonBlock height={60} />
           </div>
         </div>
-        <div className="sf-card" style={{ marginBottom: 20 }}>
-          <SkeletonBlock height={16} width="200px" />
-          <div style={{ marginTop: 12 }}>
-            <SkeletonBlock height={60} />
-          </div>
-        </div>
-        <div className="sf-card" style={{ marginBottom: 20 }}>
+        <div className="sf-card" style={{ marginBottom: 20, padding: 24 }}>
           <SkeletonBlock height={16} width="160px" />
           <div style={{ marginTop: 12 }}>
-            <SkeletonBlock height={100} />
+            <SkeletonBlock height={80} />
           </div>
         </div>
         {[1, 2, 3].map((i) => (
-          <div key={i} className="sf-card" style={{ marginBottom: 16 }}>
-            <SkeletonBlock height={40} />
+          <div key={i} className="sf-card" style={{ marginBottom: 14, padding: 20 }}>
+            <SkeletonBlock height={44} />
           </div>
         ))}
       </div>
@@ -162,7 +203,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
         }
       `}</style>
 
-      {/* Back navigation */}
+      {/* ── Breadcrumb ── */}
       <div className="sf-breadcrumb" style={{ marginBottom: 8 }}>
         <a href="#" onClick={(e) => e.preventDefault()}>SETUP</a>
         <span className="sep">›</span>
@@ -178,7 +219,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
           CODE REUSABILITY
         </a>
         <span className="sep">›</span>
-        <span>Report</span>
+        <span>{report.name}</span>
       </div>
 
       <button
@@ -201,18 +242,27 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
         Back to Code Reusability
       </button>
 
-      {/* ─── Report Header ─── */}
-      <div className="sf-card" style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
+      {/* ── Report Header ── */}
+      <div className="sf-card" style={{ padding: 24, marginBottom: 20 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 20,
+          }}
+        >
           <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>{report.name}</h1>
+            <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 14, color: 'var(--sf-text)' }}>
+              {report.name}
+            </h1>
             <div
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                gap: 24,
+                gap: 28,
                 fontSize: 13,
-                color: 'var(--sf-text-secondary)',
               }}
             >
               <div>
@@ -228,16 +278,13 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                 <div style={metaValueStyle}>{report.environment}</div>
               </div>
               <div>
-                <div style={labelStyle}>Scope</div>
-                <div style={metaValueStyle}>{report.scope.join(', ')}</div>
-              </div>
-              <div>
-                <div style={labelStyle}>Runtime Enrichment</div>
-                <div style={metaValueStyle}>{report.runtimeEnrichment ? 'Enabled' : 'Disabled'}</div>
+                <div style={labelStyle}>Org ID</div>
+                <div style={metaValueStyle}>{report.orgId}</div>
               </div>
             </div>
           </div>
-          <div style={{ textAlign: 'center', minWidth: 120 }}>
+
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
             <div style={{ fontSize: 52, fontWeight: 800, color: 'var(--sf-text)', lineHeight: 1 }}>
               {report.score}
             </div>
@@ -247,11 +294,10 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 4,
-                  marginTop: 8,
                   padding: '3px 10px',
                   borderRadius: 12,
                   background: '#e6f9ed',
-                  color: 'var(--sf-success)',
+                  color: '#2e844a',
                   fontSize: 13,
                   fontWeight: 700,
                 }}
@@ -259,26 +305,141 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                 +{report.scoreDelta} vs previous
               </span>
             )}
+            <button
+              onClick={handleDownload}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                marginTop: 4,
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--sf-blue)',
+                background: '#f0f7ff',
+                border: '1px solid #d0e2f4',
+                borderRadius: 6,
+                cursor: 'pointer',
+              }}
+            >
+              <Download size={14} />
+              Download PDF
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ─── Executive Summary ─── */}
-      <div className="sf-card" style={{ marginBottom: 20 }}>
-        <h2 className="sf-section-title">Executive Summary</h2>
-        <p style={{ fontSize: 13, lineHeight: 1.8, color: 'var(--sf-text)' }}>
-          This report analyzed 1,842 code assets across Apex, Triggers, LWC JS, and SOQL patterns
-          in the Northstar Retail Group production org. The scan identified 12 groups of similar
-          code that represent opportunities to simplify and standardize. Your Code Reuse Score
-          improved by 9 points since the last scan, reflecting successful cleanup of pricing rule
-          variants and address validation logic.
+      {/* ── Org Scan Summary ── */}
+      <div className="sf-card" style={{ padding: 24, marginBottom: 20 }}>
+        <h2 className="sf-section-title" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Shield size={18} style={{ color: 'var(--sf-blue)' }} />
+          Org Scan Summary
+        </h2>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 14,
+            marginBottom: 20,
+          }}
+        >
+          {[
+            { label: 'Total Code Assets Analyzed', value: '1,842' },
+            { label: 'Groups of Similar Code Found', value: '12' },
+            { label: 'Estimated Lines Reducible', value: '2,830' },
+            { label: 'Code Reuse Health Score', value: '78 / 100' },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              style={{
+                background: '#f7f9fb',
+                border: '1px solid #e5e8ed',
+                borderRadius: 8,
+                padding: '16px 14px',
+                textAlign: 'center',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 24,
+                  fontWeight: 800,
+                  color: 'var(--sf-text)',
+                  marginBottom: 4,
+                }}
+              >
+                {stat.value}
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                {stat.label}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p
+          style={{
+            fontSize: 13,
+            lineHeight: 1.8,
+            color: 'var(--sf-text)',
+            marginBottom: 20,
+          }}
+        >
+          Your org has significant reuse opportunities across Apex classes, trigger handlers, LWC
+          utilities, and SOQL patterns. The scan identified 12 groups of similar code spanning 53
+          individual implementations. Addressing the top 10 high-impact findings below could reduce
+          approximately 2,830 lines of duplicate logic and improve long-term maintainability.
         </p>
+
+        <div style={{ ...labelStyle, marginBottom: 10 }}>Breakdown by Code Type</div>
+        {[
+          { name: 'Apex', count: 34, pct: 65 },
+          { name: 'Triggers', count: 8, pct: 15 },
+          { name: 'LWC JS/TS', count: 6, pct: 12 },
+          { name: 'SOQL Patterns', count: 5, pct: 8 },
+        ].map((row) => (
+          <div
+            key={row.name}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              marginBottom: 8,
+              fontSize: 13,
+            }}
+          >
+            <span style={{ width: 100, fontWeight: 500, color: 'var(--sf-text)' }}>
+              {row.name}
+            </span>
+            <div
+              style={{
+                flex: 1,
+                height: 8,
+                background: '#eef1f5',
+                borderRadius: 4,
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  width: `${row.pct}%`,
+                  height: '100%',
+                  background: '#0176d3',
+                  borderRadius: 4,
+                }}
+              />
+            </div>
+            <span style={{ width: 90, textAlign: 'right', color: 'var(--sf-text-secondary)', fontSize: 12 }}>
+              {row.count} patterns ({row.pct}%)
+            </span>
+          </div>
+        ))}
       </div>
 
-      {/* ─── Score Explanation ─── */}
-      <div className="sf-card" style={{ marginBottom: 20 }}>
-        <h2 className="sf-section-title">What Changed</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+      {/* ── What Changed ── */}
+      <div className="sf-card" style={{ padding: 24, marginBottom: 20 }}>
+        <h2 className="sf-section-title" style={{ marginBottom: 16 }}>What Changed</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28 }}>
           <div>
             <div
               style={{
@@ -287,7 +448,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                 gap: 6,
                 fontWeight: 700,
                 fontSize: 14,
-                color: 'var(--sf-success)',
+                color: '#2e844a',
                 marginBottom: 12,
               }}
             >
@@ -311,7 +472,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                   color: 'var(--sf-text)',
                 }}
               >
-                <span style={{ color: 'var(--sf-success)', fontWeight: 700, flexShrink: 0 }}>+</span>
+                <span style={{ color: '#2e844a', fontWeight: 700, flexShrink: 0 }}>+</span>
                 {item}
               </div>
             ))}
@@ -324,7 +485,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                 gap: 6,
                 fontWeight: 700,
                 fontSize: 14,
-                color: 'var(--sf-warning)',
+                color: '#fe9339',
                 marginBottom: 12,
               }}
             >
@@ -348,7 +509,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                   color: 'var(--sf-text)',
                 }}
               >
-                <span style={{ color: 'var(--sf-warning)', fontWeight: 700, flexShrink: 0 }}>!</span>
+                <span style={{ color: '#fe9339', fontWeight: 700, flexShrink: 0 }}>!</span>
                 {item}
               </div>
             ))}
@@ -356,207 +517,516 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
         </div>
       </div>
 
-      {/* ─── Findings Overview ─── */}
-      <h2 className="sf-section-title" style={{ marginBottom: 16, marginTop: 8 }}>
-        Findings Overview
-      </h2>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 12,
-          marginBottom: 24,
-        }}
-      >
-        {clusters.map((cluster) => (
-          <FindingCard key={cluster.id} cluster={cluster} />
-        ))}
+      {/* ── Top 10 Code Reuse Findings ── */}
+      <div style={{ marginBottom: 8, marginTop: 8 }}>
+        <h2 className="sf-section-title" style={{ marginBottom: 4 }}>
+          Top 10 Code Reuse Findings
+        </h2>
+        <p style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginBottom: 16 }}>
+          Ranked by impact — highest priority first
+        </p>
       </div>
 
-      {/* ─── Detailed Analysis (cl-001) ─── */}
-      <div className="sf-card" style={{ marginBottom: 20 }}>
-        <h2 className="sf-section-title" style={{ marginBottom: 16 }}>
-          Detailed Analysis: {FRIENDLY_NAMES[detailedCluster.name] || detailedCluster.name}
-        </h2>
+      {sortedClusters.map((cluster, idx) => {
+        const rank = idx + 1;
+        const isExpanded = expandedFindings.has(cluster.id);
+        const friendlyName = FRIENDLY_NAMES[cluster.name] || cluster.name;
+        const friendlyAction =
+          FRIENDLY_RECOMMENDATIONS[cluster.recommendation] || cluster.recommendation;
+        const priorityColor = PRIORITY_COLORS[cluster.runtimePriority] || '#969492';
+        const hasMembers = cluster.members.length > 0;
+        const hasDependencyData = cluster.members.some((m) => m.dependencies);
 
-        {/* Preferred candidate */}
-        <div
-          style={{
-            background: '#f9fbfd',
-            border: '1px solid #e0e6ed',
-            borderRadius: 6,
-            padding: 16,
-            marginBottom: 20,
-          }}
-        >
-          <div style={{ ...labelStyle, marginBottom: 8 }}>Best version to keep</div>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>
-            {detailedCluster.preferredCandidate}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--sf-text-secondary)' }}>
-            Owner: {detailedCluster.members[0]?.owner} ·{' '}
-            {formatInvocations(detailedCluster.members[0]?.invocations30d || 0)}/30d ·{' '}
-            {formatInvocations(detailedCluster.members[0]?.invocations90d || 0)}/90d
-          </div>
-        </div>
-
-        {/* All implementations mini-table */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ ...labelStyle, marginBottom: 8 }}>All implementations</div>
-          <table className="sf-table" style={{ fontSize: 12 }}>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Owner</th>
-                <th>Usage (30d)</th>
-                <th>Similarity</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {detailedCluster.members.map((m) => (
-                <tr key={m.id}>
-                  <td style={{ fontWeight: 500 }}>{m.name}</td>
-                  <td style={{ color: 'var(--sf-text-secondary)' }}>{m.owner}</td>
-                  <td>{formatInvocations(m.invocations30d)}</td>
-                  <td>{m.similarity}%</td>
-                  <td>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        padding: '2px 8px',
-                        borderRadius: 10,
-                        background:
-                          m.badge === 'Preferred'
-                            ? '#e6f9ed'
-                            : m.badge === 'Legacy'
-                              ? '#fde8e8'
-                              : '#f0f0f0',
-                        color:
-                          m.badge === 'Preferred'
-                            ? 'var(--sf-success)'
-                            : m.badge === 'Legacy'
-                              ? 'var(--sf-error)'
-                              : 'var(--sf-text-secondary)',
-                      }}
-                    >
-                      {m.badge}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* What's the same */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ ...labelStyle, marginBottom: 8 }}>What's the same</div>
-          <ul style={{ margin: 0, paddingLeft: 20 }}>
-            {detailedCluster.commonBlocks.map((block, i) => (
-              <li
-                key={i}
-                style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--sf-text)' }}
+        return (
+          <div
+            key={cluster.id}
+            className="sf-card"
+            style={{
+              padding: 0,
+              marginBottom: 14,
+              borderLeft: `4px solid ${priorityColor}`,
+              overflow: 'hidden',
+            }}
+          >
+            {/* Header — always visible */}
+            <button
+              onClick={() => toggleFinding(cluster.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                gap: 12,
+                padding: '16px 20px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 14,
+                  fontWeight: 800,
+                  color: 'var(--sf-text-muted)',
+                  minWidth: 28,
+                }}
               >
-                {block}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* What's different */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ ...labelStyle, marginBottom: 8 }}>What's different</div>
-          <ul style={{ margin: 0, paddingLeft: 20 }}>
-            {detailedCluster.differences.map((diff, i) => (
-              <li
-                key={i}
-                style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--sf-text)' }}
+                #{rank}
+              </span>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: priorityColor,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  flex: 1,
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: 'var(--sf-text)',
+                }}
               >
-                {diff}
-              </li>
-            ))}
-          </ul>
-        </div>
+                {friendlyName}
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: '2px 10px',
+                  borderRadius: 10,
+                  background: '#f0f0f0',
+                  color: 'var(--sf-text-secondary)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {cluster.memberCount} implementations
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: '2px 10px',
+                  borderRadius: 10,
+                  background:
+                    cluster.recommendation === 'Standardize'
+                      ? '#e6f9ed'
+                      : cluster.recommendation === 'Consolidate'
+                        ? '#e6f0ff'
+                        : cluster.recommendation === 'Retire Variant'
+                          ? '#fde8e8'
+                          : '#f5f5f5',
+                  color:
+                    cluster.recommendation === 'Standardize'
+                      ? '#2e844a'
+                      : cluster.recommendation === 'Consolidate'
+                        ? '#0176d3'
+                        : cluster.recommendation === 'Retire Variant'
+                          ? '#ea001e'
+                          : 'var(--sf-text-secondary)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {friendlyAction}
+              </span>
+              {isExpanded ? (
+                <ChevronUp size={18} style={{ color: 'var(--sf-text-muted)', flexShrink: 0 }} />
+              ) : (
+                <ChevronDown size={18} style={{ color: 'var(--sf-text-muted)', flexShrink: 0 }} />
+              )}
+            </button>
 
-        {/* Dependencies */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ ...labelStyle, marginBottom: 8 }}>Dependencies</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
-            {detailedCluster.members
-              .filter((m) => m.dependencies)
-              .map((m) => (
-                <div
-                  key={m.id}
-                  style={{
-                    border: '1px solid var(--sf-border)',
-                    borderRadius: 6,
-                    padding: 12,
-                    fontSize: 12,
-                  }}
-                >
-                  <div style={{ fontWeight: 600, marginBottom: 6, fontSize: 13 }}>{m.name}</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, color: 'var(--sf-text-secondary)' }}>
-                    <span>Inbound: {m.dependencies.inboundCount}</span>
-                    <span>Outbound: {m.dependencies.outboundCount}</span>
-                    <span>
-                      Risk:{' '}
+            {/* Body — when expanded */}
+            {isExpanded && (
+              <div style={{ padding: '0 24px 24px', borderTop: '1px solid #eef1f5' }}>
+                {/* a. What this code does */}
+                <div style={{ marginTop: 16, marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 6 }}>What this code does</div>
+                  <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--sf-text)', margin: 0 }}>
+                    {cluster.sharedIntent}
+                  </p>
+                </div>
+
+                {/* b. Where it's used */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 8 }}>Where it's used</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {cluster.whereItAppears.map((loc, i) => (
                       <span
+                        key={i}
                         style={{
-                          fontWeight: 600,
-                          color:
-                            m.dependencies.riskLevel === 'High'
-                              ? 'var(--sf-error)'
-                              : m.dependencies.riskLevel === 'Moderate'
-                                ? 'var(--sf-warning)'
-                                : 'var(--sf-success)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: 12,
+                          fontWeight: 500,
+                          padding: '3px 10px',
+                          borderRadius: 12,
+                          background: '#f0f4f8',
+                          color: 'var(--sf-text)',
                         }}
                       >
-                        {m.dependencies.riskLevel}
+                        <ArrowUpRight size={11} style={{ color: 'var(--sf-text-muted)' }} />
+                        {loc}
                       </span>
-                    </span>
-                    <span>
-                      Migration Ready:{' '}
-                      <span
-                        style={{
-                          fontWeight: 600,
-                          color: m.dependencies.migrationReady
-                            ? 'var(--sf-success)'
-                            : 'var(--sf-error)',
-                        }}
-                      >
-                        {m.dependencies.migrationReady ? 'Yes' : 'No'}
-                      </span>
-                    </span>
+                    ))}
                   </div>
                 </div>
-              ))}
+
+                {/* c. Why it matters */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 6 }}>Why it matters</div>
+                  {cluster.whyItMatters.map((reason, i) => (
+                    <p
+                      key={i}
+                      style={{
+                        fontSize: 13,
+                        lineHeight: 1.6,
+                        color: 'var(--sf-text)',
+                        margin: '0 0 4px',
+                      }}
+                    >
+                      {reason}
+                    </p>
+                  ))}
+                </div>
+
+                {/* d. Best version to keep */}
+                <div
+                  style={{
+                    background: '#f9fbfd',
+                    border: '1px solid #e0e6ed',
+                    borderRadius: 6,
+                    padding: 16,
+                    marginBottom: 16,
+                  }}
+                >
+                  <div style={{ ...labelStyle, marginBottom: 8 }}>Best version to keep</div>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      fontFamily: 'SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                      marginBottom: 4,
+                      color: 'var(--sf-text)',
+                    }}
+                  >
+                    {cluster.preferredCandidate}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--sf-text-secondary)' }}>
+                    Owner: {cluster.owner}
+                    {hasMembers && cluster.members[0]?.invocations30d != null && (
+                      <>
+                        {' · '}
+                        {formatInvocations(cluster.members[0].invocations30d)} calls / 30 days
+                        {' · '}
+                        {formatInvocations(cluster.members[0].invocations90d)} calls / 90 days
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* e. What's the same across versions */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 8 }}>
+                    What's the same across versions
+                  </div>
+                  <div
+                    style={{
+                      background: '#f6faf6',
+                      border: '1px solid #d4edda',
+                      borderRadius: 6,
+                      padding: 14,
+                    }}
+                  >
+                    {cluster.commonBlocks.map((block, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 8,
+                          fontSize: 13,
+                          lineHeight: 1.6,
+                          color: '#1b5e20',
+                          marginBottom: i < cluster.commonBlocks.length - 1 ? 4 : 0,
+                        }}
+                      >
+                        <CheckCircle2
+                          size={14}
+                          style={{ marginTop: 3, flexShrink: 0, color: '#2e844a' }}
+                        />
+                        {block}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* f. What's different */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 8 }}>What's different</div>
+                  <div
+                    style={{
+                      background: '#fff8f0',
+                      border: '1px solid #fde2c8',
+                      borderRadius: 6,
+                      padding: 14,
+                    }}
+                  >
+                    {cluster.differences.map((diff, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 8,
+                          fontSize: 13,
+                          lineHeight: 1.6,
+                          color: '#7c4a03',
+                          marginBottom: i < cluster.differences.length - 1 ? 4 : 0,
+                        }}
+                      >
+                        <AlertTriangle
+                          size={14}
+                          style={{ marginTop: 3, flexShrink: 0, color: '#fe9339' }}
+                        />
+                        {diff}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* g. Dependencies */}
+                {hasDependencyData && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ ...labelStyle, marginBottom: 8 }}>Dependencies</div>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                        gap: 10,
+                      }}
+                    >
+                      {cluster.members
+                        .filter((m) => m.dependencies)
+                        .map((m) => (
+                          <div
+                            key={m.id}
+                            style={{
+                              border: '1px solid var(--sf-border)',
+                              borderRadius: 6,
+                              padding: 12,
+                              fontSize: 12,
+                            }}
+                          >
+                            <div
+                              style={{ fontWeight: 600, marginBottom: 6, fontSize: 13, color: 'var(--sf-text)' }}
+                            >
+                              {m.name}
+                            </div>
+                            <div
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: 4,
+                                color: 'var(--sf-text-secondary)',
+                              }}
+                            >
+                              <span>Inbound: {m.dependencies.inboundCount}</span>
+                              <span>Outbound: {m.dependencies.outboundCount}</span>
+                              <span>
+                                Risk:{' '}
+                                <span
+                                  style={{
+                                    fontWeight: 600,
+                                    color:
+                                      m.dependencies.riskLevel === 'High'
+                                        ? '#ea001e'
+                                        : m.dependencies.riskLevel === 'Moderate'
+                                          ? '#fe9339'
+                                          : '#2e844a',
+                                  }}
+                                >
+                                  {m.dependencies.riskLevel}
+                                </span>
+                              </span>
+                              <span>
+                                Migration Ready:{' '}
+                                <span
+                                  style={{
+                                    fontWeight: 600,
+                                    color: m.dependencies.migrationReady
+                                      ? '#2e844a'
+                                      : '#ea001e',
+                                  }}
+                                >
+                                  {m.dependencies.migrationReady ? 'Yes' : 'No'}
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* h. Impact */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 6 }}>Impact</div>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: 'var(--sf-text)',
+                    }}
+                  >
+                    {cluster.estimatedReduction}
+                  </div>
+                </div>
+
+                {/* i. Recommended next steps */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 8 }}>Recommended next steps</div>
+                  <ol style={{ margin: 0, paddingLeft: 20 }}>
+                    {cluster.nextSteps.map((step, i) => (
+                      <li
+                        key={i}
+                        style={{
+                          fontSize: 13,
+                          lineHeight: 1.7,
+                          color: 'var(--sf-text)',
+                          marginBottom: 4,
+                        }}
+                      >
+                        {step}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                {/* j. Why we recommend this */}
+                <div style={{ marginBottom: hasMembers && cluster.id === 'cl-001' ? 16 : 0 }}>
+                  <div style={{ ...labelStyle, marginBottom: 8 }}>Why we recommend this</div>
+                  <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    {cluster.rationale.map((r, i) => (
+                      <li
+                        key={i}
+                        style={{
+                          fontSize: 13,
+                          lineHeight: 1.7,
+                          color: 'var(--sf-text)',
+                          marginBottom: 4,
+                        }}
+                      >
+                        {r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* cl-001 bonus: All implementations table */}
+                {cluster.id === 'cl-001' && hasMembers && (
+                  <div>
+                    <div style={{ ...labelStyle, marginBottom: 8 }}>All implementations</div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table
+                        style={{
+                          width: '100%',
+                          borderCollapse: 'collapse',
+                          fontSize: 12,
+                        }}
+                      >
+                        <thead>
+                          <tr
+                            style={{
+                              borderBottom: '2px solid #e5e8ed',
+                              textAlign: 'left',
+                            }}
+                          >
+                            <th style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', fontSize: 11 }}>
+                              Name
+                            </th>
+                            <th style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', fontSize: 11 }}>
+                              Owner
+                            </th>
+                            <th style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', fontSize: 11 }}>
+                              Usage (30d)
+                            </th>
+                            <th style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', fontSize: 11 }}>
+                              Similarity
+                            </th>
+                            <th style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', fontSize: 11 }}>
+                              Status
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cluster.members.map((m) => (
+                            <tr
+                              key={m.id}
+                              style={{ borderBottom: '1px solid #f0f0f0' }}
+                            >
+                              <td style={{ padding: '8px 10px', fontWeight: 500, color: 'var(--sf-text)' }}>
+                                {m.name}
+                              </td>
+                              <td style={{ padding: '8px 10px', color: 'var(--sf-text-secondary)' }}>
+                                {m.owner}
+                              </td>
+                              <td style={{ padding: '8px 10px', color: 'var(--sf-text)' }}>
+                                {formatInvocations(m.invocations30d)}
+                              </td>
+                              <td style={{ padding: '8px 10px', color: 'var(--sf-text)' }}>
+                                {m.similarity}%
+                              </td>
+                              <td style={{ padding: '8px 10px' }}>
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    padding: '2px 8px',
+                                    borderRadius: 10,
+                                    background:
+                                      m.badge === 'Preferred'
+                                        ? '#e6f9ed'
+                                        : m.badge === 'Legacy'
+                                          ? '#fde8e8'
+                                          : '#f0f0f0',
+                                    color:
+                                      m.badge === 'Preferred'
+                                        ? '#2e844a'
+                                        : m.badge === 'Legacy'
+                                          ? '#ea001e'
+                                          : 'var(--sf-text-secondary)',
+                                  }}
+                                >
+                                  {m.badge}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        </div>
+        );
+      })}
 
-        {/* Recommended Steps */}
-        <div>
-          <div style={{ ...labelStyle, marginBottom: 8 }}>Recommended Steps</div>
-          <ol style={{ margin: 0, paddingLeft: 20 }}>
-            {detailedCluster.nextSteps.map((step, i) => (
-              <li
-                key={i}
-                style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--sf-text)', marginBottom: 4 }}
-              >
-                {step}
-              </li>
-            ))}
-          </ol>
-        </div>
-      </div>
-
-      {/* ─── Score Trend ─── */}
-      <div className="sf-card" style={{ marginBottom: 20 }}>
-        <h2 className="sf-section-title">Score History</h2>
+      {/* ── Score History ── */}
+      <div className="sf-card" style={{ padding: 24, marginBottom: 20, marginTop: 28 }}>
+        <h2 className="sf-section-title" style={{ marginBottom: 16 }}>Score History</h2>
         <div style={{ width: '100%', height: 260 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={scoreHistory} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
+            <LineChart
+              data={scoreHistory}
+              margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
               <XAxis
                 dataKey="month"
@@ -591,9 +1061,9 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
         </div>
       </div>
 
-      {/* ─── Audit Metadata ─── */}
-      <div className="sf-card" style={{ marginBottom: 40 }}>
-        <h2 className="sf-section-title">Scan Details</h2>
+      {/* ── Scan Details ── */}
+      <div className="sf-card" style={{ padding: 24, marginBottom: 40 }}>
+        <h2 className="sf-section-title" style={{ marginBottom: 16 }}>Scan Details</h2>
         <div
           style={{
             display: 'grid',
@@ -610,7 +1080,10 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
             { label: 'Environment', value: report.environment },
             { label: 'Org ID', value: report.orgId },
             { label: 'Scope', value: report.scope.join(', ') },
-            { label: 'Runtime Enrichment', value: report.runtimeEnrichment ? 'Enabled' : 'Disabled' },
+            {
+              label: 'Runtime Enrichment',
+              value: report.runtimeEnrichment ? 'Enabled' : 'Disabled',
+            },
             { label: 'Report Version', value: report.reportVersion },
             { label: 'Status', value: report.status },
           ].map((item) => (
@@ -620,75 +1093,6 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Finding Card sub-component ─── */
-
-function FindingCard({ cluster }: { cluster: Cluster }) {
-  const friendlyName = FRIENDLY_NAMES[cluster.name] || cluster.name;
-  const friendlyAction = FRIENDLY_RECOMMENDATIONS[cluster.recommendation] || cluster.recommendation;
-  const priorityColor = PRIORITY_COLORS[cluster.runtimePriority] || '#969492';
-  const linesNumber = extractLinesNumber(cluster.estimatedReduction);
-
-  return (
-    <div
-      className="sf-card"
-      style={{
-        padding: 16,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 8,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: priorityColor,
-              flexShrink: 0,
-            }}
-          />
-          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--sf-text)' }}>
-            {friendlyName}
-          </span>
-        </div>
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: 'var(--sf-text-muted)',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {cluster.memberCount} implementations
-        </span>
-      </div>
-      <div style={{ fontSize: 12, color: 'var(--sf-text-secondary)', lineHeight: 1.5 }}>
-        <strong>Keep:</strong> {cluster.preferredCandidate}
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginTop: 'auto',
-        }}
-      >
-        <span
-          className={`recommendation-badge ${cluster.recommendation.toLowerCase().replace(' ', '-')}`}
-          style={{ textTransform: 'none', fontWeight: 600, fontSize: 11 }}
-        >
-          {friendlyAction}
-        </span>
-        <span style={{ fontSize: 12, color: 'var(--sf-text-muted)' }}>
-          ~{linesNumber} lines saveable
-        </span>
       </div>
     </div>
   );
