@@ -6,6 +6,11 @@ import {
   RotateCcw,
   Plus,
   Loader2,
+  CheckCircle2,
+  AlertTriangle,
+  Lightbulb,
+  ArrowUpRight,
+  Eye,
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { scanReports } from '../data/mockData';
@@ -43,6 +48,8 @@ const statusBadgeClass: Record<string, string> = {
   Draft: 'sf-badge sf-badge-draft',
 };
 
+const latestReport = scanReports[0];
+
 export default function CodeReusabilityLanding({
   onViewReport,
   onGenerateReport,
@@ -60,11 +67,21 @@ export default function CodeReusabilityLanding({
     onGenerateReport();
   };
 
-  const handleDownloadPdf = (reportName: string) => {
+  const handleDownloadPdf = () => {
     showToast('Preparing PDF...', 'info');
     setTimeout(() => {
       showToast('PDF downloaded successfully', 'success');
     }, 1500);
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: 11,
+    fontWeight: 600,
+    color: 'var(--sf-text-muted)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.03em',
+    marginBottom: 6,
   };
 
   return (
@@ -78,57 +95,167 @@ export default function CodeReusabilityLanding({
         <span>CODE REUSABILITY</span>
       </div>
 
-      {/* Page header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            background: 'linear-gradient(135deg, #e1f5fe, #bbdefb)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <BarChart3 size={20} color="#0176d3" />
+      {/* Page header with actions */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: 'linear-gradient(135deg, #e1f5fe, #bbdefb)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <BarChart3 size={20} color="#0176d3" />
+          </div>
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 700 }}>Code Reusability</h1>
+            <p style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 2 }}>
+              Scan your org to find repeated code patterns and identify opportunities to simplify your codebase.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 style={{ fontSize: 20, fontWeight: 700 }}>Code Reusability</h1>
-          <p style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginTop: 2 }}>
-            Scan your org to find repeated code patterns and identify opportunities to simplify your codebase.
-          </p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="sf-btn" onClick={handleDownloadPdf}>
+            <Download size={14} /> Download PDF
+          </button>
+          <button className="sf-btn" onClick={() => onViewReport(latestReport.id)}>
+            <Eye size={14} /> View Full Report
+          </button>
+          <button className="sf-btn sf-btn-primary" onClick={handleGenerate} disabled={scanInProgress}>
+            <Plus size={14} /> Generate Reuse Report
+          </button>
         </div>
       </div>
 
-      {/* New Report card */}
-      <div className="sf-card" style={{ marginBottom: 20, position: 'relative' }}>
+      {/* ── Summary Stat Cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 16 }}>
+        {[
+          { label: 'CODE REUSE HEALTH SCORE', value: '78', sub: '+9 vs previous', subColor: '#2e844a' },
+          { label: 'HIGH-PRIORITY REUSE OPPORTUNITIES', value: '12', sub: null, subColor: '' },
+          { label: 'RECOMMENDED REUSABLE STANDARDS', value: '7', sub: null, subColor: '' },
+          { label: 'LOWER-VALUE VARIANTS', value: '19', sub: null, subColor: '' },
+          { label: 'SURFACES ANALYZED', value: null, sub: 'Apex, Triggers, LWC JS, SOQL', subColor: '' },
+        ].map((card, i) => (
+          <div key={i} className="sf-stat-card" onClick={() => onViewReport(latestReport.id)}>
+            <span className="stat-label">{card.label}</span>
+            {card.value ? (
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span className="stat-value">{card.value}</span>
+                {card.sub && <span className="stat-delta positive">▲ {card.sub}</span>}
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginTop: 4 }}>{card.sub}</div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Three Insight Columns ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 16 }}>
+        <div className="sf-insight-col">
+          <div className="col-header">
+            <CheckCircle2 size={18} color="#2e844a" />
+            <span>What Improved</span>
+          </div>
+          {[
+            { text: 'Duplicate pricing rule variants reduced', detail: 'Period: Last 4 weeks' },
+            { text: 'Shared address validation standard adopted', detail: 'Period: Last 4 weeks' },
+            { text: '4 lower-value trigger helpers consolidated', detail: 'Period: Last 4 weeks' },
+          ].map((item, i) => (
+            <div key={i} className="col-item" onClick={() => onViewReport(latestReport.id)}>
+              <div>
+                <span className="item-title">{item.text}</span>
+                <div style={{ fontSize: 11, color: 'var(--sf-text-muted)', marginTop: 2 }}>{item.detail}</div>
+              </div>
+              <ArrowUpRight size={14} color="#0176d3" style={{ flexShrink: 0, marginTop: 2 }} />
+            </div>
+          ))}
+        </div>
+        <div className="sf-insight-col">
+          <div className="col-header">
+            <AlertTriangle size={18} color="#fe9339" />
+            <span>What Needs Attention</span>
+          </div>
+          {[
+            { text: 'Opportunity scoring logic still duplicated across 5 classes', detail: 'Period: Last 4 weeks' },
+            { text: 'Quote sync REST wrappers remain fragmented', detail: 'Period: Last 4 weeks' },
+            { text: 'No preferred reusable standard for renewal processors', detail: 'Period: Last 4 weeks' },
+          ].map((item, i) => (
+            <div key={i} className="col-item" onClick={() => onViewReport(latestReport.id)}>
+              <div>
+                <span className="item-title">{item.text}</span>
+                <div style={{ fontSize: 11, color: 'var(--sf-text-muted)', marginTop: 2 }}>{item.detail}</div>
+              </div>
+              <ArrowUpRight size={14} color="#0176d3" style={{ flexShrink: 0, marginTop: 2 }} />
+            </div>
+          ))}
+        </div>
+        <div className="sf-insight-col">
+          <div className="col-header">
+            <Lightbulb size={18} color="#0176d3" />
+            <span>Recommended Actions</span>
+          </div>
+          {[
+            { text: 'Review Pricing Rules Calculator Variants', detail: 'High Priority' },
+            { text: 'Standardize Address Validation Service Family', detail: 'Medium Priority' },
+            { text: 'Retire Legacy Lead Scoring Utils', detail: 'Low Priority' },
+          ].map((item, i) => (
+            <div key={i} className="col-item" onClick={() => onViewReport(latestReport.id)}>
+              <div>
+                <span className="item-title">{item.text}</span>
+                <div style={{ fontSize: 11, color: 'var(--sf-text-muted)', marginTop: 2 }}>{item.detail}</div>
+              </div>
+              <ArrowUpRight size={14} color="#0176d3" style={{ flexShrink: 0, marginTop: 2 }} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Latest Scan Details ── */}
+      <div className="sf-card" style={{ marginBottom: 16 }}>
+        <h3 className="sf-section-title">Latest Scan Details</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, fontSize: 13 }}>
+          {[
+            ['Report Name', latestReport.name],
+            ['Requested By', latestReport.requestedBy],
+            ['Requested Date', formatDate(latestReport.requestedDate)],
+            ['Start Time', formatDateTime(latestReport.startTime)],
+            ['End Time', formatDateTime(latestReport.endTime)],
+            ['Environment', latestReport.environment],
+            ['Org ID', latestReport.orgId],
+            ['Scope', latestReport.scope.join(', ')],
+            ['Runtime Enrichment', latestReport.runtimeEnrichment],
+            ['Report Version', latestReport.reportVersion],
+            ['Status', latestReport.status],
+          ].map(([label, value], i) => (
+            <div key={i} style={{ padding: '6px 0' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{label}</div>
+              <div style={{ color: 'var(--sf-text)', marginTop: 2 }}>{value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── New Report Form ── */}
+      <div className="sf-card" style={{ marginBottom: 16, position: 'relative' }}>
         <h2 className="sf-section-title">New Report</h2>
 
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 200px 200px',
+            gridTemplateColumns: '1fr 180px 240px',
             gap: 12,
             alignItems: 'end',
             marginBottom: 16,
           }}
         >
           <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 11,
-                fontWeight: 600,
-                color: 'var(--sf-text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
-                marginBottom: 6,
-              }}
-            >
-              Report Name
-            </label>
+            <label style={labelStyle}>Report Name</label>
             <input
               className="sf-input"
               style={{ width: '100%' }}
@@ -138,19 +265,7 @@ export default function CodeReusabilityLanding({
             />
           </div>
           <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 11,
-                fontWeight: 600,
-                color: 'var(--sf-text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
-                marginBottom: 6,
-              }}
-            >
-              Environment
-            </label>
+            <label style={labelStyle}>Environment</label>
             <select
               className="sf-select"
               style={{ width: '100%' }}
@@ -163,19 +278,7 @@ export default function CodeReusabilityLanding({
             </select>
           </div>
           <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 11,
-                fontWeight: 600,
-                color: 'var(--sf-text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
-                marginBottom: 6,
-              }}
-            >
-              Scope
-            </label>
+            <label style={labelStyle}>Scope</label>
             <select
               className="sf-select"
               style={{ width: '100%' }}
@@ -184,8 +287,14 @@ export default function CodeReusabilityLanding({
               disabled={scanInProgress}
             >
               <option>All Surfaces</option>
-              <option>Apex Only</option>
+              <option>Apex Classes &amp; Methods</option>
               <option>Apex + Triggers</option>
+              <option>LWC (JavaScript / TypeScript)</option>
+              <option>Aura Components</option>
+              <option>Visualforce Pages &amp; Controllers</option>
+              <option>SOQL / SOSL Patterns</option>
+              <option>Flows &amp; Invocable Actions</option>
+              <option>Integration Wrappers (REST / SOAP)</option>
             </select>
           </div>
         </div>
@@ -198,7 +307,6 @@ export default function CodeReusabilityLanding({
           Generate Report
         </button>
 
-        {/* Scan progress overlay */}
         {scanInProgress && (
           <div
             style={{
@@ -219,20 +327,14 @@ export default function CodeReusabilityLanding({
               color="var(--sf-blue)"
               style={{ animation: 'spin 1s linear infinite' }}
             />
-            <span
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: 'var(--sf-text)',
-              }}
-            >
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--sf-text)' }}>
               {processingMessage}
             </span>
           </div>
         )}
       </div>
 
-      {/* Recent Reports card */}
+      {/* ── Scan History / Audit Table ── */}
       <div className="sf-card" style={{ padding: 0 }}>
         <div
           style={{
@@ -243,13 +345,12 @@ export default function CodeReusabilityLanding({
             borderBottom: '1px solid var(--sf-border)',
           }}
         >
-          <h2 style={{ fontSize: 15, fontWeight: 700 }}>Recent Reports</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700 }}>Scan History</h2>
           <button
-            className="sf-btn sf-btn-sm"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="sf-btn sf-btn-primary sf-btn-sm"
+            onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
           >
-            <Plus size={14} />
-            New Report
+            <Plus size={12} /> New Report
           </button>
         </div>
 
@@ -257,6 +358,7 @@ export default function CodeReusabilityLanding({
           <table className="sf-table">
             <thead>
               <tr>
+                <th></th>
                 <th>Report Name</th>
                 <th>Requestor</th>
                 <th>Requested Date</th>
@@ -270,26 +372,20 @@ export default function CodeReusabilityLanding({
             </thead>
             <tbody>
               {scanReports.map((report) => (
-                <tr key={report.id}>
+                <tr key={report.id} onClick={() => report.status === 'Complete' && onViewReport(report.id)}>
+                  <td><BarChart3 size={14} color="var(--sf-text-muted)" /></td>
                   <td>
                     {report.status === 'Complete' ? (
                       <a
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
+                          e.stopPropagation();
                           onViewReport(report.id);
                         }}
-                        style={{
-                          color: 'var(--sf-blue)',
-                          textDecoration: 'none',
-                          fontWeight: 500,
-                        }}
-                        onMouseEnter={(e) =>
-                          ((e.target as HTMLElement).style.textDecoration = 'underline')
-                        }
-                        onMouseLeave={(e) =>
-                          ((e.target as HTMLElement).style.textDecoration = 'none')
-                        }
+                        style={{ color: 'var(--sf-blue)', textDecoration: 'none', fontWeight: 500 }}
+                        onMouseEnter={(e) => ((e.target as HTMLElement).style.textDecoration = 'underline')}
+                        onMouseLeave={(e) => ((e.target as HTMLElement).style.textDecoration = 'none')}
                       >
                         {report.name}
                       </a>
@@ -298,64 +394,30 @@ export default function CodeReusabilityLanding({
                     )}
                   </td>
                   <td style={{ color: 'var(--sf-text-secondary)' }}>{report.requestedBy}</td>
-                  <td style={{ color: 'var(--sf-text-secondary)' }}>
-                    {formatDate(report.requestedDate)}
-                  </td>
-                  <td style={{ color: 'var(--sf-text-secondary)', fontSize: 12 }}>
-                    {formatDateTime(report.startTime)}
-                  </td>
-                  <td style={{ color: 'var(--sf-text-secondary)', fontSize: 12 }}>
-                    {formatDateTime(report.endTime)}
-                  </td>
-                  <td>
-                    <span style={{ fontWeight: 700 }}>
-                      {report.score !== null ? report.score : '—'}
-                    </span>
-                  </td>
+                  <td style={{ color: 'var(--sf-text-secondary)', fontSize: 12 }}>{formatDate(report.requestedDate)}</td>
+                  <td style={{ color: 'var(--sf-text-secondary)', fontSize: 12 }}>{formatDateTime(report.startTime)}</td>
+                  <td style={{ color: 'var(--sf-text-secondary)', fontSize: 12 }}>{formatDateTime(report.endTime)}</td>
+                  <td><span style={{ fontWeight: 700 }}>{report.score !== null ? report.score : '—'}</span></td>
                   <td>
                     {report.scoreDelta !== null ? (
-                      <span style={{ color: 'var(--sf-success)', fontWeight: 600 }}>
-                        +{report.scoreDelta}
-                      </span>
+                      <span style={{ color: 'var(--sf-success)', fontWeight: 600 }}>+{report.scoreDelta}</span>
                     ) : (
                       <span style={{ color: 'var(--sf-text-muted)' }}>—</span>
                     )}
                   </td>
-                  <td>
-                    <span className={statusBadgeClass[report.status] || 'sf-badge'}>
-                      {report.status}
-                    </span>
-                  </td>
-                  <td>
-                    <div
-                      style={{
-                        display: 'flex',
-                        gap: 4,
-                        justifyContent: 'flex-end',
-                      }}
-                    >
+                  <td><span className={statusBadgeClass[report.status] || 'sf-badge'}>{report.status}</span></td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                       {report.status === 'Complete' && (
-                        <button
-                          className="sf-btn sf-btn-icon sf-btn-sm"
-                          title="View Report"
-                          onClick={() => onViewReport(report.id)}
-                        >
+                        <button className="sf-btn sf-btn-icon sf-btn-sm" title="View Report" onClick={() => onViewReport(report.id)}>
                           <ExternalLink size={14} />
                         </button>
                       )}
-                      <button
-                        className="sf-btn sf-btn-icon sf-btn-sm"
-                        title="Download PDF"
-                        onClick={() => handleDownloadPdf(report.name)}
-                      >
+                      <button className="sf-btn sf-btn-icon sf-btn-sm" title="Download PDF" onClick={handleDownloadPdf}>
                         <Download size={14} />
                       </button>
                       {report.status === 'Failed' && (
-                        <button
-                          className="sf-btn sf-btn-icon sf-btn-sm"
-                          title="Re-run"
-                          onClick={handleGenerate}
-                        >
+                        <button className="sf-btn sf-btn-icon sf-btn-sm" title="Re-run" onClick={handleGenerate}>
                           <RotateCcw size={14} />
                         </button>
                       )}
