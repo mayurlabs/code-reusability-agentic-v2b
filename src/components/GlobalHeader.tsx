@@ -13,18 +13,15 @@ function SalesforceLogo() {
 }
 
 function AgentforceIcon({ size = 24 }: { size?: number }) {
+  const basePath = import.meta.env.BASE_URL || '/';
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <circle cx="16" cy="16" r="15" fill="#444" />
-      <ellipse cx="10" cy="10" rx="4" ry="4" fill="#444" />
-      <ellipse cx="22" cy="10" rx="4" ry="4" fill="#444" />
-      <circle cx="16" cy="16" r="12" fill="#555" />
-      <path d="M8 16c0 0 2-2 8-2s8 2 8 2" stroke="#333" strokeWidth="1.5" strokeLinecap="round" />
-      <rect x="7" y="13" width="18" height="7" rx="3.5" fill="#333" />
-      <rect x="9" y="14.5" width="6" height="4" rx="2" fill="#80d4ff" opacity="0.9" />
-      <rect x="17" y="14.5" width="6" height="4" rx="2" fill="#80d4ff" opacity="0.9" />
-      <path d="M12 22c0 0 1.5 2 4 2s4-2 4-2" stroke="#333" strokeWidth="1" strokeLinecap="round" fill="none" />
-    </svg>
+    <img
+      src={`${basePath}agentforce-icon.png`}
+      alt="Agentforce"
+      width={size}
+      height={size}
+      style={{ borderRadius: '50%', objectFit: 'cover' }}
+    />
   );
 }
 
