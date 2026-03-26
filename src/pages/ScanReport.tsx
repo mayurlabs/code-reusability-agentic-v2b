@@ -873,6 +873,59 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                   </div>
                 )}
 
+                {/* Code view for each member */}
+                {hasMembers && cluster.members.some(m => m.codeLines && m.codeLines.length > 0) && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ ...labelStyle, marginBottom: 8 }}>Code — highlighted by similarity</div>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 10, fontSize: 11, flexWrap: 'wrap' }}>
+                      {[
+                        { bg: '#dcf5e7', border: '#2e844a', label: 'Duplicate (safe to reuse)' },
+                        { bg: '#fef9e7', border: '#d4a017', label: 'Similar (minor variant)' },
+                        { bg: '#fef0e8', border: '#e8590c', label: 'Different (needs attention)' },
+                        { bg: '#e8f0fe', border: '#0176d3', label: 'Unique to this version' },
+                      ].map(l => (
+                        <span key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: 2, background: l.bg, border: `1px solid ${l.border}` }} />
+                          {l.label}
+                        </span>
+                      ))}
+                    </div>
+                    {cluster.members.filter(m => m.codeLines && m.codeLines.length > 0).map(member => {
+                      const bcMap: Record<string, {bg:string, color:string}> = {
+                        Preferred: { bg: '#e6f9ed', color: '#2e844a' },
+                        Candidate: { bg: '#fef4e8', color: '#b86e00' },
+                        Legacy: { bg: '#fde8ea', color: '#ea001e' },
+                      };
+                      const bc = bcMap[member.badge] || { bg: '#f0f0f0', color: '#706e6b' };
+                      const lineBg: Record<string, string> = { identical: '#f0faf4', similar: '#fefcf0', different: '#fef5f0', unique: '#f0f5ff' };
+                      const lineBorder: Record<string, string> = { identical: '#2e844a', similar: '#d4a017', different: '#e8590c', unique: '#0176d3' };
+                      const lineLabel: Record<string, string> = { identical: 'DUPLICATE', similar: 'SIMILAR', different: 'DIFFERENT', unique: 'UNIQUE' };
+                      return (
+                        <div key={member.id} style={{ border: '1px solid var(--sf-border)', borderRadius: 6, overflow: 'hidden', marginBottom: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fafbfc', borderBottom: '1px solid var(--sf-border)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <code style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-blue)' }}>{member.name}</code>
+                              <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 8px', borderRadius: 10, background: bc.bg, color: bc.color }}>{member.badge}</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--sf-text-secondary)' }}>{member.owner} &middot; {member.loc} lines &middot; {member.similarity}% similar</div>
+                          </div>
+                          <div style={{ fontFamily: "'SF Mono','Fira Code',Consolas,monospace", fontSize: 12, lineHeight: '22px' }}>
+                            {member.codeLines!.map((line, li) => (
+                              <div key={li} style={{ display: 'flex', background: lineBg[line.matchType] || '#fff', borderLeft: `3px solid ${lineBorder[line.matchType] || '#ccc'}`, borderBottom: '1px solid #f5f5f5' }}>
+                                <span style={{ width: 32, textAlign: 'right', paddingRight: 8, color: '#aaa', fontSize: 10, userSelect: 'none', lineHeight: '22px', flexShrink: 0 }}>{line.lineNum}</span>
+                                <span style={{ flex: 1, whiteSpace: 'pre', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8 }}>{line.text}</span>
+                                {line.matchType !== 'identical' && (
+                                  <span style={{ fontSize: 9, fontWeight: 700, fontFamily: 'var(--sf-font)', color: lineBorder[line.matchType], padding: '0 8px', lineHeight: '22px', whiteSpace: 'nowrap', flexShrink: 0 }}>{lineLabel[line.matchType]}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {/* h. Impact */}
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ ...labelStyle, marginBottom: 6 }}>Impact</div>
