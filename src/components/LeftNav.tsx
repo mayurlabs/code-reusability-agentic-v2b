@@ -219,6 +219,24 @@ export function LeftNav() {
           );
         })}
       </div>
+
+      <div
+        style={{
+          padding: '12px 16px',
+          borderTop: '1px solid var(--sf-border)',
+          fontSize: 9,
+          color: '#b0b0b0',
+          lineHeight: 1.5,
+          marginTop: 'auto',
+          flexShrink: 0,
+        }}
+      >
+        Created by Mayuresh Verma
+        <br />
+        Sr. Product Manager — Scale
+        <br />
+        Mar 2026
+      </div>
     </nav>
   );
 }
