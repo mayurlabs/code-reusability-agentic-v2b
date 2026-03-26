@@ -707,11 +707,13 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                   <div style={{ ...labelStyle, marginBottom: 8 }}>Best version to keep</div>
                   <div
                     style={{
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: 700,
                       fontFamily: 'SFMono-Regular, Menlo, Monaco, Consolas, monospace',
                       marginBottom: 4,
                       color: 'var(--sf-text)',
+                      wordBreak: 'break-all',
+                      lineHeight: 1.4,
                     }}
                   >
                     {cluster.preferredCandidate}
@@ -806,7 +808,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                     <div
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
                         gap: 10,
                       }}
                     >
@@ -820,10 +822,19 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                               borderRadius: 6,
                               padding: 12,
                               fontSize: 12,
+                              overflow: 'hidden',
                             }}
                           >
                             <div
-                              style={{ fontWeight: 600, marginBottom: 6, fontSize: 13, color: 'var(--sf-text)' }}
+                              style={{
+                                fontWeight: 600,
+                                marginBottom: 6,
+                                fontSize: 12,
+                                color: 'var(--sf-text)',
+                                wordBreak: 'break-all',
+                                lineHeight: 1.4,
+                                fontFamily: 'SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                              }}
                             >
                               {m.name}
                             </div>
@@ -902,10 +913,10 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                       const lineLabel: Record<string, string> = { identical: 'DUPLICATE', similar: 'SIMILAR', different: 'DIFFERENT', unique: 'UNIQUE' };
                       return (
                         <div key={member.id} style={{ border: '1px solid var(--sf-border)', borderRadius: 6, overflow: 'hidden', marginBottom: 12 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fafbfc', borderBottom: '1px solid var(--sf-border)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <code style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-blue)' }}>{member.name}</code>
-                              <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 8px', borderRadius: 10, background: bc.bg, color: bc.color }}>{member.badge}</span>
+                          <div style={{ padding: '10px 14px', background: '#fafbfc', borderBottom: '1px solid var(--sf-border)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                              <code style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-blue)', wordBreak: 'break-all', lineHeight: 1.3 }}>{member.name}</code>
+                              <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 8px', borderRadius: 10, background: bc.bg, color: bc.color, flexShrink: 0 }}>{member.badge}</span>
                             </div>
                             <div style={{ fontSize: 11, color: 'var(--sf-text-secondary)' }}>{member.owner} &middot; {member.loc} lines &middot; {member.similarity}% similar</div>
                           </div>
@@ -1022,7 +1033,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                               key={m.id}
                               style={{ borderBottom: '1px solid #f0f0f0' }}
                             >
-                              <td style={{ padding: '8px 10px', fontWeight: 500, color: 'var(--sf-text)' }}>
+                              <td style={{ padding: '8px 10px', fontWeight: 500, color: 'var(--sf-text)', fontFamily: 'SFMono-Regular, Menlo, Monaco, Consolas, monospace', fontSize: 11, wordBreak: 'break-all', maxWidth: 280, lineHeight: 1.4 }}>
                                 {m.name}
                               </td>
                               <td style={{ padding: '8px 10px', color: 'var(--sf-text-secondary)' }}>
