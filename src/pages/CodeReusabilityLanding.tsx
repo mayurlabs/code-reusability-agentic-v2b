@@ -120,11 +120,11 @@ export default function CodeReusabilityLanding({
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="sf-btn" onClick={handleDownloadPdf}>
-            <Download size={14} /> Download PDF
-          </button>
           <button className="sf-btn" onClick={() => onViewReport(latestReport.id)}>
             <Eye size={14} /> View Full Report
+          </button>
+          <button className="sf-btn" onClick={() => onViewReport('playbook')}>
+            <BarChart3 size={14} /> How to Use This Report
           </button>
           <button className="sf-btn sf-btn-primary" onClick={handleGenerate} disabled={scanInProgress}>
             <Plus size={14} /> Generate Reuse Report

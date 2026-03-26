@@ -5,6 +5,7 @@ import { LeftNav } from './components/LeftNav';
 import { AgentPanel } from './components/AgentPanel';
 import CodeReusabilityLanding from './pages/CodeReusabilityLanding';
 import ScanReport from './pages/ScanReport';
+import PlaybookPage from './pages/PlaybookPage';
 import ApexGuruPage from './pages/ApexGuruPage';
 import CodeModernisationPage from './pages/CodeModernisationPage';
 
@@ -25,8 +26,12 @@ export default function App() {
   }, [activePage, currentView]);
 
   function handleViewReport(id: string) {
-    setCurrentReportId(id);
-    setCurrentView('report');
+    if (id === 'playbook') {
+      setCurrentView('playbook');
+    } else {
+      setCurrentReportId(id);
+      setCurrentView('report');
+    }
   }
 
   function handleGenerateReport() {
@@ -40,9 +45,13 @@ export default function App() {
   function renderContent() {
     switch (activePage) {
       case 'code-reusability':
-        return currentView === 'report' ? (
-          <ScanReport reportId={currentReportId} onBack={handleBackToLanding} />
-        ) : (
+        if (currentView === 'report') {
+          return <ScanReport reportId={currentReportId} onBack={handleBackToLanding} />;
+        }
+        if (currentView === 'playbook') {
+          return <PlaybookPage onBack={handleBackToLanding} />;
+        }
+        return (
           <CodeReusabilityLanding
             onViewReport={handleViewReport}
             onGenerateReport={handleGenerateReport}
