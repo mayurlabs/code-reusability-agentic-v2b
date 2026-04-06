@@ -965,17 +965,39 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                   </div>
                 )}
 
-                {/* h. Impact */}
+                {/* h. Impact — multi-dimensional */}
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 6, display: 'flex', alignItems: 'center' }}>Impact <InfoTooltip text={TIP['score-delta']} /></div>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: 'var(--sf-text)',
-                    }}
-                  >
-                    {cluster.estimatedReduction}
+                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+                    Impact Summary <InfoTooltip text="Shows the full business impact of this repeated code — not just lines saved, but workflows affected, change risk, test efficiency, and dependency complexity." width={300} />
+                  </div>
+                  <div style={{
+                    border: '1px solid #d0dbe8',
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                  }}>
+                    {[
+                      { icon: '📐', label: 'Code', value: cluster.impact.codeLines, bg: '#f8f9fb' },
+                      { icon: '⚡', label: 'Workflows Affected', value: cluster.impact.workflows, bg: '#fff' },
+                      { icon: '🔄', label: 'Change Risk', value: cluster.impact.changeRisk, bg: '#f8f9fb' },
+                      { icon: '🧪', label: 'Test Surface', value: cluster.impact.testSurface, bg: '#fff' },
+                      { icon: '🔗', label: 'Dependencies', value: cluster.impact.dependencies, bg: '#f8f9fb' },
+                      ...(cluster.impact.governorLimits ? [{ icon: '⚠️', label: 'Governor Limits', value: cluster.impact.governorLimits, bg: '#fff8f0' }] : []),
+                    ].map((row, ri) => (
+                      <div key={ri} style={{
+                        display: 'grid',
+                        gridTemplateColumns: '28px 150px 1fr',
+                        alignItems: 'center',
+                        padding: '10px 16px',
+                        background: row.bg,
+                        borderBottom: '1px solid #eef1f5',
+                        fontSize: 13,
+                        gap: 8,
+                      }}>
+                        <span style={{ fontSize: 15, textAlign: 'center' }}>{row.icon}</span>
+                        <span style={{ fontWeight: 600, color: 'var(--sf-text)', fontSize: 12 }}>{row.label}</span>
+                        <span style={{ color: 'var(--sf-text-secondary)', lineHeight: 1.5 }}>{row.value}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

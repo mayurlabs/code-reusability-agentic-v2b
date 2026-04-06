@@ -80,6 +80,14 @@ export interface Cluster {
   whyItMatters: string[];
   whereItAppears: string[];
   estimatedReduction: string;
+  impact: {
+    codeLines: string;
+    workflows: string;
+    changeRisk: string;
+    testSurface: string;
+    dependencies: string;
+    governorLimits?: string;
+  };
   rationale: string[];
   nextSteps: string[];
 }
@@ -457,6 +465,14 @@ export const clusters: Cluster[] = [
       'Sales rep quote builder (QuoteController → QuotePricingHelper)',
     ],
     estimatedReduction: '~340 lines → ~85 lines (75% reduction)',
+    impact: {
+      codeLines: '~340 → ~85 lines (75% reduction)',
+      workflows: 'Affects Quote Generation, Opportunity Pricing, Renewal Processing, Partner Portal, and B2B Checkout workflows',
+      changeRisk: 'Pricing rule changes currently require updates in 5 places — after standardization, 1 place',
+      testSurface: '5 separate test suites → 1 shared suite (~80% test maintenance reduction)',
+      dependencies: '23 dependency connections → 10 connections after consolidation',
+      governorLimits: 'Legacy variant uses inline SOQL inside a loop — standardizing eliminates this governor limit risk',
+    },
     rationale: [
       'PricingRulesEngineV2 has the highest invocation volume and broadest caller base.',
       'It is the only variant with audit logging and explicit rounding mode.',
@@ -573,6 +589,13 @@ export const clusters: Cluster[] = [
     whyItMatters: ['Inconsistent address formats cause shipping errors and duplicate account creation.'],
     whereItAppears: ['Account creation flow', 'Checkout shipping step', 'Lead conversion', 'Order fulfillment'],
     estimatedReduction: '~280 lines → ~90 lines (68% reduction)',
+    impact: {
+      codeLines: '~280 → ~90 lines (68% reduction)',
+      workflows: 'Affects Account Creation, Lead Conversion, Checkout Shipping, and Order Fulfillment workflows',
+      changeRisk: 'Address format changes (e.g., new country codes) currently require updates in 4 places',
+      testSurface: '4 validation test suites → 1 shared suite (~75% test reduction)',
+      dependencies: '14 dependency connections → 6 after consolidation',
+    },
     rationale: ['AddressValidationService has the most robust error handling and highest test coverage.'],
     nextSteps: ['Consolidate all address validation behind AddressValidationService.', 'Deprecate LWC-embedded validation logic.'],
   },
@@ -680,6 +703,13 @@ export const clusters: Cluster[] = [
     whyItMatters: ['Exact duplicates waste maintenance effort and create confusion about the canonical source.'],
     whereItAppears: ['Lead assignment rules', 'Marketing Cloud sync', 'SDR dashboard'],
     estimatedReduction: '~180 lines → ~60 lines (67% reduction)',
+    impact: {
+      codeLines: '~180 → ~60 lines (67% reduction)',
+      workflows: 'Affects Lead Assignment, Marketing Cloud Sync, and SDR Dashboard workflows',
+      changeRisk: 'Scoring model updates currently require changes in 3 identical copies',
+      testSurface: '3 duplicate test classes → 1 (~67% test reduction)',
+      dependencies: '8 dependency connections → 4 after cleanup',
+    },
     rationale: ['Two copies are byte-identical; the third differs only in a class comment header.'],
     nextSteps: ['Delete the two duplicate classes.', 'Update references to point to LeadScoringEngine.'],
   },
@@ -795,6 +825,14 @@ export const clusters: Cluster[] = [
     whyItMatters: ['Multiple REST wrappers multiply the blast radius of an API contract change from the ERP vendor.'],
     whereItAppears: ['Quote approval process', 'Order activation trigger', 'Billing sync batch', 'Manual sync button (LWC)', 'Scheduled nightly sync'],
     estimatedReduction: '~420 lines → ~140 lines (67% reduction)',
+    impact: {
+      codeLines: '~420 → ~140 lines (67% reduction)',
+      workflows: 'Affects Quote Approval, Order Activation, Billing Sync, Manual Quote Sync, and Nightly Sync workflows',
+      changeRisk: 'ERP API contract changes currently require updates in 5 separate REST wrappers',
+      testSurface: '5 wrapper test classes → 1 configurable suite (~80% test reduction)',
+      dependencies: '20 dependency connections → 8 after consolidation',
+      governorLimits: '2 wrappers lack proper retry backoff — standardizing eliminates timeout and callout limit risks',
+    },
     rationale: ['All five share 84%+ structure; differences are mostly config-level, not logic-level.'],
     nextSteps: ['Extract a configurable base REST client.', 'Move endpoint and mapping differences into custom metadata.'],
   },
@@ -901,6 +939,13 @@ export const clusters: Cluster[] = [
     whyItMatters: ['Inconsistent renewal dates between systems cause revenue recognition errors.'],
     whereItAppears: ['Contract renewal batch', 'Opportunity close-date defaulting', 'Renewal forecast report', 'CSM playbook automation'],
     estimatedReduction: '~160 lines → ~50 lines (69% reduction)',
+    impact: {
+      codeLines: '~160 → ~50 lines (69% reduction)',
+      workflows: 'Affects Subscription Renewal, Contract Management, and Renewal Notification workflows',
+      changeRisk: 'Fiscal calendar updates currently require changes in 4 nearly identical helpers',
+      testSurface: '4 duplicate test classes → 1 (~75% test reduction)',
+      dependencies: '12 dependency connections → 5 after consolidation',
+    },
     rationale: ['Four near-identical helpers with only fiscal start month differing, which can be parameterized.'],
     nextSteps: ['Parameterize fiscal start month.', 'Consolidate into RenewalDateUtils.', 'Update all caller references.'],
   },
@@ -1006,6 +1051,13 @@ export const clusters: Cluster[] = [
     whyItMatters: ['Six variants of territory logic means reps may see inconsistent assignments across workflows.'],
     whereItAppears: ['Opportunity trigger', 'Lead conversion', 'Account team sync', 'Territory realignment batch', 'Manual reassignment LWC', 'Import wizard post-processing'],
     estimatedReduction: '~510 lines → ~170 lines (67% reduction)',
+    impact: {
+      codeLines: '~510 → ~170 lines (67% reduction)',
+      workflows: 'Affects Opportunity Routing, Territory Planning, Sales Compensation, and Manager Assignment workflows',
+      changeRisk: 'Territory hierarchy changes currently require updates in 6 different routing implementations',
+      testSurface: '6 separate test suites → 2 (~67% test reduction)',
+      dependencies: '18 dependency connections → 7 after consolidation',
+    },
     rationale: ['Core assignment algorithm is shared; differences are mostly in data source and override handling.'],
     nextSteps: ['Audit all six for business rule differences vs. accidental drift.', 'Design a unified engine with configurable override strategies.'],
   },
@@ -1110,6 +1162,14 @@ export const clusters: Cluster[] = [
     whyItMatters: ['Tax computation errors have direct compliance and audit risk.'],
     whereItAppears: ['Invoice generation batch', 'Quote tax preview', 'Credit memo creation', 'Self-service portal'],
     estimatedReduction: '~300 lines → ~110 lines (63% reduction)',
+    impact: {
+      codeLines: '~300 → ~110 lines (63% reduction)',
+      workflows: 'Affects Invoice Generation, Credit Memo Processing, and Revenue Recognition workflows',
+      changeRisk: 'Tax jurisdiction changes currently require updates in 4 separate computation methods',
+      testSurface: '4 test classes → 1 (~75% test reduction)',
+      dependencies: '15 dependency connections → 6 after consolidation',
+      governorLimits: 'Legacy variant uses hardcoded rates — missing external tax engine callout creates compliance risk',
+    },
     rationale: ['Variants are intentionally separated by tax engine; monitor until vendor consolidation is decided.'],
     nextSteps: ['No immediate action. Revisit after Q2 tax vendor contract review.', 'Document differences for audit team.'],
   },
@@ -1219,6 +1279,13 @@ export const clusters: Cluster[] = [
     whyItMatters: ['Missed escalations directly impact customer satisfaction and SLA compliance metrics.'],
     whereItAppears: ['Case before-update trigger', 'Scheduled SLA check batch', 'Omni-Channel overflow handler', 'Email-to-Case post-processing', 'Chat transcript close trigger'],
     estimatedReduction: '~380 lines → ~130 lines (66% reduction)',
+    impact: {
+      codeLines: '~380 → ~130 lines (66% reduction)',
+      workflows: 'Affects Case Support, SLA Management, Customer Escalation, and Entitlement Processing workflows',
+      changeRisk: 'SLA policy changes currently require updates in 5 separate escalation branches',
+      testSurface: '5 trigger test classes → 1 configurable suite (~80% test reduction)',
+      dependencies: '16 dependency connections → 6 after consolidation',
+    },
     rationale: ['Trigger-based branches make testing difficult; a handler-based approach would improve testability.'],
     nextSteps: ['Extract escalation evaluation into a single handler class.', 'Replace trigger-embedded logic with handler calls.'],
   },
@@ -1332,6 +1399,13 @@ export const clusters: Cluster[] = [
     whyItMatters: ['Three copies of rollup logic means forecast discrepancies when one is updated without the others.'],
     whereItAppears: ['Weekly forecast batch', 'Manager dashboard component', 'Executive forecast report'],
     estimatedReduction: '~210 lines → ~75 lines (64% reduction)',
+    impact: {
+      codeLines: '~210 → ~75 lines (64% reduction)',
+      workflows: 'Affects Sales Forecasting, Pipeline Reporting, and Manager Dashboard workflows',
+      changeRisk: 'Fiscal quarter boundary changes currently require updates in 3 identical rollup utilities',
+      testSurface: '3 duplicate test classes → 1 (~67% test reduction)',
+      dependencies: '9 dependency connections → 4 after consolidation',
+    },
     rationale: ['97% similarity — differences are limited to date default parameters.'],
     nextSteps: ['Consolidate into ForecastRollupService with configurable date range.', 'Delete ForecastRollupHelper and ForecastUtils.'],
   },
@@ -1443,6 +1517,14 @@ export const clusters: Cluster[] = [
     whyItMatters: ['Inconsistent approval thresholds mean some deals bypass required approvals, creating revenue leakage risk.'],
     whereItAppears: ['Quote discount field update', 'CPQ guided selling', 'Partner deal registration', 'Renewal pricing override'],
     estimatedReduction: '~260 lines → ~80 lines (69% reduction)',
+    impact: {
+      codeLines: '~260 → ~80 lines (69% reduction)',
+      workflows: 'Affects CPQ Discount Approval, Deal Desk Automation, and Quote Approval Process workflows',
+      changeRisk: 'Approval threshold policy changes currently require updates in 4 separate evaluators',
+      testSurface: '4 test classes → 1 (~75% test reduction)',
+      dependencies: '14 dependency connections → 5 after consolidation',
+      governorLimits: '2 evaluators query approval matrix inside loops — standardizing eliminates SOQL governor limit risk',
+    },
     rationale: ['ApprovalThresholdEngine uses custom metadata, making it the most configurable and maintainable variant.'],
     nextSteps: ['Migrate all threshold lookups to custom metadata.', 'Route all approval evaluations through ApprovalThresholdEngine.', 'Retire hardcoded threshold constants.'],
   },
