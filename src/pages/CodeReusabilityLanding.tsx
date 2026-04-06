@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { scanReports } from '../data/mockData';
+import { InfoTooltip, TIP } from '../components/InfoTooltip';
 
 interface CodeReusabilityLandingProps {
   onViewReport: (reportId: string) => void;
@@ -135,14 +136,14 @@ export default function CodeReusabilityLanding({
       {/* ── Summary Stat Cards ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 16 }}>
         {[
-          { label: 'CODE REUSE HEALTH SCORE', value: '78', sub: '+9 vs previous', subColor: '#2e844a' },
-          { label: 'HIGH-PRIORITY REUSE OPPORTUNITIES', value: '12', sub: null, subColor: '' },
-          { label: 'RECOMMENDED REUSABLE STANDARDS', value: '7', sub: null, subColor: '' },
-          { label: 'LOWER-VALUE VARIANTS', value: '19', sub: null, subColor: '' },
-          { label: 'SURFACES ANALYZED', value: null, sub: 'Apex, Triggers, LWC JS, SOQL', subColor: '' },
+          { label: 'CODE REUSE HEALTH SCORE', value: '78', sub: '+9 vs previous', subColor: '#2e844a', tip: TIP['health-score'] },
+          { label: 'HIGH-PRIORITY REUSE OPPORTUNITIES', value: '12', sub: null, subColor: '', tip: TIP['high-priority'] },
+          { label: 'RECOMMENDED REUSABLE STANDARDS', value: '7', sub: null, subColor: '', tip: TIP['reusable-standards'] },
+          { label: 'LOWER-VALUE VARIANTS', value: '19', sub: null, subColor: '', tip: TIP['lower-value'] },
+          { label: 'SURFACES ANALYZED', value: null, sub: 'Apex, Triggers, LWC JS, SOQL', subColor: '', tip: TIP['surfaces'] },
         ].map((card, i) => (
           <div key={i} className="sf-stat-card" onClick={() => onViewReport(latestReport.id)}>
-            <span className="stat-label">{card.label}</span>
+            <span className="stat-label">{card.label}{card.tip && <InfoTooltip text={card.tip} />}</span>
             {card.value ? (
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                 <span className="stat-value">{card.value}</span>
@@ -160,7 +161,7 @@ export default function CodeReusabilityLanding({
         <div className="sf-insight-col">
           <div className="col-header">
             <CheckCircle2 size={18} color="#2e844a" />
-            <span>What Improved</span>
+            <span>What Improved <InfoTooltip text={TIP['health-score']} /></span>
           </div>
           {[
             { text: 'Duplicate pricing rule variants reduced', detail: 'Period: Last 4 weeks' },
@@ -179,7 +180,7 @@ export default function CodeReusabilityLanding({
         <div className="sf-insight-col">
           <div className="col-header">
             <AlertTriangle size={18} color="#fe9339" />
-            <span>What Needs Attention</span>
+            <span>What Needs Attention <InfoTooltip text={TIP['high-priority']} /></span>
           </div>
           {[
             { text: 'Opportunity scoring logic still duplicated across 5 classes', detail: 'Period: Last 4 weeks' },
@@ -198,12 +199,12 @@ export default function CodeReusabilityLanding({
         <div className="sf-insight-col">
           <div className="col-header">
             <Lightbulb size={18} color="#0176d3" />
-            <span>Recommended Actions</span>
+            <span>Recommended Actions <InfoTooltip text={TIP['recommendation']} /></span>
           </div>
           {[
             { text: 'Review Pricing Rules Calculator Variants', detail: 'High Priority' },
             { text: 'Standardize Address Validation Service Family', detail: 'Medium Priority' },
-            { text: 'Retire Legacy Lead Scoring Utils', detail: 'Low Priority' },
+            { text: 'Review Legacy Lead Scoring Utils for retirement', detail: 'Low Priority' },
           ].map((item, i) => (
             <div key={i} className="col-item" onClick={() => onViewReport(latestReport.id)}>
               <div>
@@ -229,12 +230,12 @@ export default function CodeReusabilityLanding({
             ['Environment', latestReport.environment],
             ['Org ID', latestReport.orgId],
             ['Scope', latestReport.scope.join(', ')],
-            ['Runtime Enrichment', latestReport.runtimeEnrichment],
+            ['Runtime Enrichment', latestReport.runtimeEnrichment, TIP['runtime-priority']],
             ['Report Version', latestReport.reportVersion],
             ['Status', latestReport.status],
-          ].map(([label, value], i) => (
+          ].map(([label, value, tipText], i) => (
             <div key={i} style={{ padding: '6px 0' }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{label}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{label}{tipText && <InfoTooltip text={tipText} />}</div>
               <div style={{ color: 'var(--sf-text)', marginTop: 2 }}>{value}</div>
             </div>
           ))}
@@ -364,8 +365,8 @@ export default function CodeReusabilityLanding({
                 <th>Requested Date</th>
                 <th>Start Time</th>
                 <th>End Time</th>
-                <th>Score</th>
-                <th>Delta</th>
+                <th>Score <InfoTooltip text={TIP['health-score']} /></th>
+                <th>Delta <InfoTooltip text={TIP['score-delta']} /></th>
                 <th>Status</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>

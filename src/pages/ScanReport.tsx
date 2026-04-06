@@ -21,6 +21,7 @@ import {
 import { scanReports, clusters, scoreHistory } from '../data/mockData';
 import type { Cluster } from '../data/mockData';
 import { useAppContext } from '../context/AppContext';
+import { InfoTooltip, TIP } from '../components/InfoTooltip';
 
 interface ScanReportProps {
   reportId: string;
@@ -41,11 +42,11 @@ const FRIENDLY_NAMES: Record<string, string> = {
 };
 
 const FRIENDLY_RECOMMENDATIONS: Record<string, string> = {
-  Standardize: 'Pick the best version to keep',
-  Review: 'Review and decide',
-  Consolidate: 'Merge into one',
-  'Retire Variant': 'Remove older versions',
-  Monitor: 'Monitor for now',
+  Standardize: 'Designate as preferred standard',
+  Review: 'Review before taking action',
+  Consolidate: 'Consolidate after caller review',
+  'Retire Variant': 'Review for retirement after migration',
+  Monitor: 'Monitor — no action needed yet',
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -370,8 +371,9 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
               >
                 {stat.value}
               </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {stat.label}
+                {stat.label === 'Code Reuse Health Score' && <InfoTooltip text={TIP['health-score']} />}
               </div>
             </div>
           ))}
@@ -438,7 +440,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
 
       {/* ── What Changed ── */}
       <div className="sf-card" style={{ padding: 24, marginBottom: 20 }}>
-        <h2 className="sf-section-title" style={{ marginBottom: 16 }}>What Changed</h2>
+        <h2 className="sf-section-title" style={{ marginBottom: 16, display: 'flex', alignItems: 'center' }}>What Changed <InfoTooltip text={TIP['score-delta']} /></h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28 }}>
           <div>
             <div
@@ -519,8 +521,8 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
 
       {/* ── Top 10 Code Reuse Findings ── */}
       <div style={{ marginBottom: 8, marginTop: 8 }}>
-        <h2 className="sf-section-title" style={{ marginBottom: 4 }}>
-          Top 10 Code Reuse Findings
+        <h2 className="sf-section-title" style={{ marginBottom: 4, display: 'flex', alignItems: 'center' }}>
+          Top 10 Code Reuse Findings <InfoTooltip text={TIP['high-priority']} />
         </h2>
         <p style={{ fontSize: 13, color: 'var(--sf-text-secondary)', marginBottom: 16 }}>
           Ranked by impact — highest priority first
@@ -642,6 +644,24 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
             {/* Body — when expanded */}
             {isExpanded && (
               <div style={{ padding: '0 24px 24px', borderTop: '1px solid #eef1f5' }}>
+                {/* Why these belong together */}
+                <div style={{ marginTop: 16, marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 6, display: 'flex', alignItems: 'center' }}>
+                    Why these implementations were grouped <InfoTooltip text={TIP['why-grouped']} />
+                  </div>
+                  <div style={{
+                    background: '#f8f9fb',
+                    border: '1px solid #e0e4ea',
+                    borderRadius: 6,
+                    padding: 14,
+                    fontSize: 13,
+                    lineHeight: 1.6,
+                    color: 'var(--sf-text)',
+                  }}>
+                    These {cluster.memberCount} implementations share a common business purpose: {cluster.sharedIntent.toLowerCase()} They were grouped because they contain overlapping logic blocks ({cluster.commonBlocks.slice(0, 3).join(', ')}) and appear across related business flows ({cluster.whereItAppears.slice(0, 3).join(', ')}).
+                  </div>
+                </div>
+
                 {/* a. What this code does */}
                 <div style={{ marginTop: 16, marginBottom: 16 }}>
                   <div style={{ ...labelStyle, marginBottom: 6 }}>What this code does</div>
@@ -704,7 +724,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                     marginBottom: 16,
                   }}
                 >
-                  <div style={{ ...labelStyle, marginBottom: 8 }}>Best version to keep</div>
+                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>Best version to keep <InfoTooltip text={TIP['preferred']} /></div>
                   <div
                     style={{
                       fontSize: 13,
@@ -733,8 +753,8 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
 
                 {/* e. What's the same across versions */}
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 8 }}>
-                    What's the same across versions
+                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+                    What's the same across versions <InfoTooltip text={TIP['code-identical']} />
                   </div>
                   <div
                     style={{
@@ -769,7 +789,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
 
                 {/* f. What's different */}
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 8 }}>What's different</div>
+                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>What's different <InfoTooltip text={TIP['code-different']} /></div>
                   <div
                     style={{
                       background: '#fff8f0',
@@ -804,7 +824,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                 {/* g. Dependencies */}
                 {hasDependencyData && (
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ ...labelStyle, marginBottom: 8 }}>Dependencies</div>
+                    <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>Dependencies <InfoTooltip text={TIP['dep-graph']} /></div>
                     <div
                       style={{
                         display: 'grid',
@@ -890,14 +910,15 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                     <div style={{ ...labelStyle, marginBottom: 8 }}>Code — highlighted by similarity</div>
                     <div style={{ display: 'flex', gap: 8, marginBottom: 10, fontSize: 11, flexWrap: 'wrap' }}>
                       {[
-                        { bg: '#dcf5e7', border: '#2e844a', label: 'Duplicate (safe to reuse)' },
-                        { bg: '#fef9e7', border: '#d4a017', label: 'Similar (minor variant)' },
-                        { bg: '#fef0e8', border: '#e8590c', label: 'Different (needs attention)' },
-                        { bg: '#e8f0fe', border: '#0176d3', label: 'Unique to this version' },
+                        { bg: '#dcf5e7', border: '#2e844a', label: 'Duplicate (safe to reuse)', tip: 'code-identical' as const },
+                        { bg: '#fef9e7', border: '#d4a017', label: 'Similar (minor variant)', tip: 'code-similar' as const },
+                        { bg: '#fef0e8', border: '#e8590c', label: 'Different (needs attention)', tip: 'code-different' as const },
+                        { bg: '#e8f0fe', border: '#0176d3', label: 'Unique to this version', tip: 'code-unique' as const },
                       ].map(l => (
                         <span key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ width: 10, height: 10, borderRadius: 2, background: l.bg, border: `1px solid ${l.border}` }} />
                           {l.label}
+                          <InfoTooltip text={TIP[l.tip]} />
                         </span>
                       ))}
                     </div>
@@ -939,7 +960,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
 
                 {/* h. Impact */}
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 6 }}>Impact</div>
+                  <div style={{ ...labelStyle, marginBottom: 6, display: 'flex', alignItems: 'center' }}>Impact <InfoTooltip text={TIP['score-delta']} /></div>
                   <div
                     style={{
                       fontSize: 14,
@@ -953,7 +974,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
 
                 {/* i. Recommended next steps */}
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 8 }}>Recommended next steps</div>
+                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>Recommended next steps <InfoTooltip text={TIP['recommendation']} /></div>
                   <ol style={{ margin: 0, paddingLeft: 20 }}>
                     {cluster.nextSteps.map((step, i) => (
                       <li
@@ -1084,7 +1105,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
 
       {/* ── Score History ── */}
       <div className="sf-card" style={{ padding: 24, marginBottom: 20, marginTop: 28 }}>
-        <h2 className="sf-section-title" style={{ marginBottom: 16 }}>Score History</h2>
+        <h2 className="sf-section-title" style={{ marginBottom: 16, display: 'flex', alignItems: 'center' }}>Score History <InfoTooltip text={TIP['score-delta']} /></h2>
         <div style={{ width: '100%', height: 260 }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
