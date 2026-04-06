@@ -15,6 +15,7 @@ import {
 import { useAppContext } from '../context/AppContext';
 import { scanReports } from '../data/mockData';
 import { InfoTooltip, TIP } from '../components/InfoTooltip';
+import { ScoreBreakdown } from '../components/ScoreBreakdown';
 
 interface CodeReusabilityLandingProps {
   onViewReport: (reportId: string) => void;
@@ -134,21 +135,26 @@ export default function CodeReusabilityLanding({
       </div>
 
       {/* ── Summary Stat Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', gap: 14, marginBottom: 16 }}>
+        {/* Health Score — wider card with breakdown */}
+        <div className="sf-stat-card" onClick={() => onViewReport(latestReport.id)} style={{ gridRow: 'span 1' }}>
+          <span className="stat-label">CODE REUSE HEALTH SCORE <InfoTooltip text={TIP['health-score']} /></span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <span className="stat-value">78</span>
+            <span className="stat-delta positive">▲ +9 vs previous</span>
+          </div>
+          <ScoreBreakdown compact />
+        </div>
         {[
-          { label: 'CODE REUSE HEALTH SCORE', value: '78', sub: '+9 vs previous', subColor: '#2e844a', tip: TIP['health-score'] },
-          { label: 'HIGH-PRIORITY REUSE OPPORTUNITIES', value: '12', sub: null, subColor: '', tip: TIP['high-priority'] },
-          { label: 'RECOMMENDED REUSABLE STANDARDS', value: '7', sub: null, subColor: '', tip: TIP['reusable-standards'] },
-          { label: 'LOWER-VALUE VARIANTS', value: '19', sub: null, subColor: '', tip: TIP['lower-value'] },
-          { label: 'SURFACES ANALYZED', value: null, sub: 'Apex, Triggers, LWC JS, SOQL', subColor: '', tip: TIP['surfaces'] },
+          { label: 'HIGH-PRIORITY REUSE OPPORTUNITIES', value: '12', tip: TIP['high-priority'] },
+          { label: 'RECOMMENDED REUSABLE STANDARDS', value: '7', tip: TIP['reusable-standards'] },
+          { label: 'LOWER-VALUE VARIANTS', value: '19', tip: TIP['lower-value'] },
+          { label: 'SURFACES ANALYZED', value: null, sub: 'Apex, Triggers, LWC JS, SOQL', tip: TIP['surfaces'] },
         ].map((card, i) => (
           <div key={i} className="sf-stat-card" onClick={() => onViewReport(latestReport.id)}>
-            <span className="stat-label">{card.label}{card.tip && <InfoTooltip text={card.tip} />}</span>
+            <span className="stat-label">{card.label}<InfoTooltip text={card.tip} /></span>
             {card.value ? (
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <span className="stat-value">{card.value}</span>
-                {card.sub && <span className="stat-delta positive">▲ {card.sub}</span>}
-              </div>
+              <span className="stat-value">{card.value}</span>
             ) : (
               <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginTop: 4 }}>{card.sub}</div>
             )}

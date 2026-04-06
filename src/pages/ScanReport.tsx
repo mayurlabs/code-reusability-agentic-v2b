@@ -22,6 +22,7 @@ import { scanReports, clusters, scoreHistory } from '../data/mockData';
 import type { Cluster } from '../data/mockData';
 import { useAppContext } from '../context/AppContext';
 import { InfoTooltip, TIP } from '../components/InfoTooltip';
+import { ScoreBreakdown } from '../components/ScoreBreakdown';
 
 interface ScanReportProps {
   reportId: string;
@@ -436,6 +437,10 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
             </span>
           </div>
         ))}
+
+        <div style={{ marginTop: 20 }}>
+          <ScoreBreakdown />
+        </div>
       </div>
 
       {/* ── What Changed ── */}
