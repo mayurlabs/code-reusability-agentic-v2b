@@ -821,86 +821,93 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                   </div>
                 </div>
 
-                {/* g. Dependencies */}
+                {/* g. Dependencies — detailed per member */}
                 {hasDependencyData && (
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>Dependencies <InfoTooltip text={TIP['dep-graph']} /></div>
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                        gap: 10,
-                      }}
-                    >
-                      {cluster.members
-                        .filter((m) => m.dependencies)
-                        .map((m) => (
-                          <div
-                            key={m.id}
-                            style={{
-                              border: '1px solid var(--sf-border)',
-                              borderRadius: 6,
-                              padding: 12,
-                              fontSize: 12,
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <div
-                              style={{
-                                fontWeight: 600,
-                                marginBottom: 6,
-                                fontSize: 12,
-                                color: 'var(--sf-text)',
-                                wordBreak: 'break-all',
-                                lineHeight: 1.4,
-                                fontFamily: 'SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                              }}
-                            >
-                              {m.name}
-                            </div>
-                            <div
-                              style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr 1fr',
-                                gap: 4,
-                                color: 'var(--sf-text-secondary)',
-                              }}
-                            >
-                              <span>Inbound: {m.dependencies.inboundCount}</span>
-                              <span>Outbound: {m.dependencies.outboundCount}</span>
-                              <span>
-                                Risk:{' '}
-                                <span
-                                  style={{
-                                    fontWeight: 600,
-                                    color:
-                                      m.dependencies.riskLevel === 'High'
-                                        ? '#ea001e'
-                                        : m.dependencies.riskLevel === 'Moderate'
-                                          ? '#fe9339'
-                                          : '#2e844a',
-                                  }}
-                                >
-                                  {m.dependencies.riskLevel}
-                                </span>
-                              </span>
-                              <span>
-                                Migration Ready:{' '}
-                                <span
-                                  style={{
-                                    fontWeight: 600,
-                                    color: m.dependencies.migrationReady
-                                      ? '#2e844a'
-                                      : '#ea001e',
-                                  }}
-                                >
-                                  {m.dependencies.migrationReady ? 'Yes' : 'No'}
-                                </span>
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                    <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+                      Dependency Analysis <InfoTooltip text={TIP['dep-graph']} />
                     </div>
+                    {cluster.members
+                      .filter((m) => m.dependencies)
+                      .map((m) => {
+                        const riskColor = m.dependencies.riskLevel === 'High' ? '#ea001e' : m.dependencies.riskLevel === 'Moderate' ? '#fe9339' : '#2e844a';
+                        const badgeBg = m.badge === 'Preferred' ? '#e6f9ed' : m.badge === 'Legacy' ? '#fde8ea' : '#f0f4f8';
+                        const badgeColor = m.badge === 'Preferred' ? '#2e844a' : m.badge === 'Legacy' ? '#ea001e' : '#444';
+                        return (
+                          <div key={m.id} style={{ border: '1px solid var(--sf-border)', borderRadius: 8, marginBottom: 12, overflow: 'hidden' }}>
+                            {/* Member header with summary stats */}
+                            <div style={{ padding: '12px 16px', background: '#fafbfc', borderBottom: '1px solid var(--sf-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <code style={{ fontSize: 12, fontWeight: 600, color: 'var(--sf-blue)', wordBreak: 'break-all', lineHeight: 1.3 }}>{m.name}</code>
+                                <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 8px', borderRadius: 10, background: badgeBg, color: badgeColor, flexShrink: 0 }}>{m.badge}</span>
+                              </div>
+                              <div style={{ display: 'flex', gap: 16, fontSize: 11 }}>
+                                <span>Inbound: <strong>{m.dependencies.inboundCount}</strong></span>
+                                <span>Outbound: <strong>{m.dependencies.outboundCount}</strong></span>
+                                <span>Risk: <strong style={{ color: riskColor }}>{m.dependencies.riskLevel}</strong></span>
+                                <span>Migration: <strong style={{ color: m.dependencies.migrationReady ? '#2e844a' : '#ea001e' }}>{m.dependencies.migrationReady ? 'Ready' : 'Not Ready'}</strong></span>
+                              </div>
+                            </div>
+
+                            {/* Detailed dependency table */}
+                            {m.dependencies.details && m.dependencies.details.length > 0 && (
+                              <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                                  <thead>
+                                    <tr style={{ borderBottom: '2px solid #e5e8ed', textAlign: 'left' }}>
+                                      <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', fontSize: 10 }}>Caller / Dependency</th>
+                                      <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', fontSize: 10 }}>Direction</th>
+                                      <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', fontSize: 10 }}>Type</th>
+                                      <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', fontSize: 10 }}>Status</th>
+                                      <th style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--sf-text-muted)', textTransform: 'uppercase', fontSize: 10 }}>Action Needed</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {m.dependencies.details.map((dep, di) => {
+                                      const statusColor = dep.status === 'Active' ? '#2e844a' : dep.status === 'Legacy' ? '#ea001e' : dep.status === 'Low Usage' ? '#fe9339' : '#706e6b';
+                                      const dirBg = dep.direction === 'Inbound' ? '#e8f0fe' : '#f0f4f0';
+                                      const dirColor = dep.direction === 'Inbound' ? '#0176d3' : '#2e844a';
+                                      return (
+                                        <tr key={di} style={{ borderBottom: '1px solid #f0f2f5' }}>
+                                          <td style={{ padding: '7px 12px', fontFamily: 'SFMono-Regular,Menlo,Monaco,Consolas,monospace', fontSize: 11, fontWeight: 500, color: 'var(--sf-text)' }}>{dep.name}</td>
+                                          <td style={{ padding: '7px 12px' }}>
+                                            <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: dirBg, color: dirColor }}>{dep.direction}</span>
+                                          </td>
+                                          <td style={{ padding: '7px 12px', color: 'var(--sf-text-secondary)', fontSize: 11 }}>{dep.type}</td>
+                                          <td style={{ padding: '7px 12px' }}>
+                                            <span style={{ fontSize: 10, fontWeight: 600, color: statusColor }}>{dep.status}</span>
+                                          </td>
+                                          <td style={{ padding: '7px 12px', color: 'var(--sf-text-secondary)', fontSize: 11, maxWidth: 240 }}>{dep.action}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {/* Action rationale */}
+                            {m.dependencies.actionRationale && (
+                              <div style={{
+                                padding: '10px 16px',
+                                background: m.badge === 'Preferred' ? '#f0faf4' : m.badge === 'Legacy' ? '#fef5f5' : '#f8f9fb',
+                                borderTop: '1px solid var(--sf-border)',
+                                fontSize: 12,
+                                lineHeight: 1.6,
+                                color: 'var(--sf-text)',
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: 8,
+                              }}>
+                                <span style={{ fontWeight: 700, color: m.badge === 'Preferred' ? '#2e844a' : m.badge === 'Legacy' ? '#ea001e' : '#0176d3', flexShrink: 0, fontSize: 11, marginTop: 1 }}>
+                                  {m.badge === 'Preferred' ? '✓ SAFE' : m.badge === 'Legacy' ? '⚠ MIGRATE FIRST' : '→ ACTION NEEDED'}
+                                </span>
+                                <span>{m.dependencies.actionRationale}</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                   </div>
                 )}
 

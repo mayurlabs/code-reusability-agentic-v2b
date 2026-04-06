@@ -23,6 +23,14 @@ export interface CodeLine {
   matchType: 'identical' | 'similar' | 'different' | 'unique';
 }
 
+export interface DepEntry {
+  name: string;
+  direction: 'Inbound' | 'Outbound';
+  type: string;
+  status: 'Active' | 'Low Usage' | 'Shared' | 'Legacy';
+  action: string;
+}
+
 export interface DependencyInfo {
   inboundCount: number;
   outboundCount: number;
@@ -30,6 +38,8 @@ export interface DependencyInfo {
   topDependencies: string[];
   riskLevel: 'Low' | 'Moderate' | 'High' | 'Unknown';
   migrationReady: boolean;
+  details?: DepEntry[];
+  actionRationale?: string;
 }
 
 export interface ClusterMember {
@@ -205,6 +215,19 @@ export const clusters: Cluster[] = [
           topDependencies: ['PricebookEntrySelector', 'DiscountScheduleHelper'],
           riskLevel: 'Low',
           migrationReady: true,
+          details: [
+            { name: 'QuoteLineItemTrigger', direction: 'Inbound', type: 'Trigger', status: 'Active', action: 'Already uses this version' },
+            { name: 'OpportunityProductService', direction: 'Inbound', type: 'Apex Class', status: 'Active', action: 'Already uses this version' },
+            { name: 'CPQCartController', direction: 'Inbound', type: 'LWC Controller', status: 'Active', action: 'Already uses this version' },
+            { name: 'RenewalPricingBatch', direction: 'Inbound', type: 'Batch Apex', status: 'Active', action: 'Already uses this version' },
+            { name: 'PartnerQuoteService', direction: 'Inbound', type: 'Apex Class', status: 'Active', action: 'Already uses this version' },
+            { name: 'DealDeskApprovalFlow', direction: 'Inbound', type: 'Flow Action', status: 'Active', action: 'Already uses this version' },
+            { name: 'OrderLineItemTrigger', direction: 'Inbound', type: 'Trigger', status: 'Active', action: 'Already uses this version' },
+            { name: 'B2BCheckoutController', direction: 'Inbound', type: 'LWC Controller', status: 'Active', action: 'Already uses this version' },
+            { name: 'PricebookEntrySelector', direction: 'Outbound', type: 'Utility', status: 'Shared', action: 'No change needed — shared utility' },
+            { name: 'DiscountScheduleHelper', direction: 'Outbound', type: 'Service', status: 'Shared', action: 'No change needed — shared utility' },
+          ],
+          actionRationale: 'This implementation is safe to designate as the standard. All 8 inbound callers are active and already use this version. No migration work is needed.',
         },
         codeLines: [
           { lineNum: 1, text: 'public static Decimal calculateDiscount(Id productId, Decimal quantity, String tier) {', matchType: 'identical' },
@@ -252,6 +275,16 @@ export const clusters: Cluster[] = [
           topDependencies: ['PricebookEntrySelector', 'DiscountTierConfig', 'QuoteAuditService'],
           riskLevel: 'Moderate',
           migrationReady: false,
+          details: [
+            { name: 'QuoteController', direction: 'Inbound', type: 'Apex Class', status: 'Active', action: 'Redirect to preferred version' },
+            { name: 'RenewalQuoteBuilder', direction: 'Inbound', type: 'Apex Class', status: 'Active', action: 'Redirect to preferred version' },
+            { name: 'AmendmentService', direction: 'Inbound', type: 'Apex Class', status: 'Active', action: 'Redirect to preferred version' },
+            { name: 'QuoteSyncBatch', direction: 'Inbound', type: 'Batch Apex', status: 'Low Usage', action: 'Redirect to preferred version' },
+            { name: 'PricebookEntrySelector', direction: 'Outbound', type: 'Utility', status: 'Shared', action: 'No change needed — shared utility' },
+            { name: 'DiscountTierConfig', direction: 'Outbound', type: 'Custom Metadata', status: 'Shared', action: 'No change needed' },
+            { name: 'QuoteAuditService', direction: 'Outbound', type: 'Service', status: 'Active', action: 'No change needed' },
+          ],
+          actionRationale: 'This implementation has 4 active callers that need to be redirected to the preferred version before it can be retired. All callers use a compatible method signature — estimated migration effort is low.',
         },
         codeLines: [
           { lineNum: 1, text: 'public static Decimal applyVolumeDiscount(Id prodId, Decimal qty, String tierLevel) {', matchType: 'similar' },
@@ -295,6 +328,14 @@ export const clusters: Cluster[] = [
           topDependencies: ['Product2Selector', 'DiscountMatrix__c', 'ErrorLogger'],
           riskLevel: 'Moderate',
           migrationReady: false,
+          details: [
+            { name: 'B2BOrderTrigger', direction: 'Inbound', type: 'Trigger', status: 'Low Usage', action: 'Migrate to preferred version' },
+            { name: 'LegacyCheckoutController', direction: 'Inbound', type: 'VF Controller', status: 'Legacy', action: 'Migrate to preferred version — controller may also need modernization' },
+            { name: 'Product2Selector', direction: 'Outbound', type: 'Utility', status: 'Shared', action: 'No change needed — shared utility' },
+            { name: 'DiscountMatrix__c', direction: 'Outbound', type: 'Custom Object', status: 'Legacy', action: 'Consider migrating to Discount_Schedule__c used by preferred version' },
+            { name: 'ErrorLogger', direction: 'Outbound', type: 'Utility', status: 'Shared', action: 'No change needed' },
+          ],
+          actionRationale: 'This legacy implementation has only 2 remaining callers (B2BOrderTrigger and LegacyCheckoutController). Migrate these 2 callers to the preferred version first, then this method can be safely removed. Note: LegacyCheckoutController may itself be a modernization candidate.',
         },
         codeLines: [
           { lineNum: 1, text: 'public static Decimal calcProductDiscount(String productId, Integer qty) {', matchType: 'similar' },
@@ -338,6 +379,16 @@ export const clusters: Cluster[] = [
           topDependencies: ['PricebookEntrySelector', 'PartnerTierConfig', 'DiscountScheduleHelper', 'PartnerAuditLog'],
           riskLevel: 'Low',
           migrationReady: true,
+          details: [
+            { name: 'PartnerPortalController', direction: 'Inbound', type: 'Apex Class', status: 'Active', action: 'Redirect to preferred version' },
+            { name: 'PartnerQuoteAPI', direction: 'Inbound', type: 'REST Endpoint', status: 'Active', action: 'Redirect to preferred version' },
+            { name: 'DealRegistrationService', direction: 'Inbound', type: 'Apex Class', status: 'Active', action: 'Redirect to preferred version' },
+            { name: 'PricebookEntrySelector', direction: 'Outbound', type: 'Utility', status: 'Shared', action: 'No change needed' },
+            { name: 'PartnerTierConfig', direction: 'Outbound', type: 'Custom Metadata', status: 'Active', action: 'May merge into DiscountScheduleHelper config' },
+            { name: 'DiscountScheduleHelper', direction: 'Outbound', type: 'Service', status: 'Shared', action: 'No change needed' },
+            { name: 'PartnerAuditLog', direction: 'Outbound', type: 'Utility', status: 'Active', action: 'Adopt into preferred version audit flow' },
+          ],
+          actionRationale: 'This partner-specific variant has 3 active callers. The method signature is compatible with the preferred version. Redirect callers and adopt PartnerAuditLog into the preferred audit flow.',
         },
       },
       {
@@ -362,6 +413,17 @@ export const clusters: Cluster[] = [
           topDependencies: ['PricebookEntrySelector', 'RenewalDiscountPolicy', 'DiscountScheduleHelper'],
           riskLevel: 'Low',
           migrationReady: true,
+          details: [
+            { name: 'RenewalOpportunityTrigger', direction: 'Inbound', type: 'Trigger', status: 'Active', action: 'Redirect to preferred version' },
+            { name: 'ContractRenewalBatch', direction: 'Inbound', type: 'Batch Apex', status: 'Active', action: 'Redirect to preferred version' },
+            { name: 'CSMDashboardController', direction: 'Inbound', type: 'LWC Controller', status: 'Active', action: 'Redirect to preferred version' },
+            { name: 'AutoRenewalScheduler', direction: 'Inbound', type: 'Scheduled Apex', status: 'Active', action: 'Redirect to preferred version' },
+            { name: 'RenewalQuoteBuilder', direction: 'Inbound', type: 'Apex Class', status: 'Active', action: 'Redirect to preferred version' },
+            { name: 'PricebookEntrySelector', direction: 'Outbound', type: 'Utility', status: 'Shared', action: 'No change needed' },
+            { name: 'RenewalDiscountPolicy', direction: 'Outbound', type: 'Custom Metadata', status: 'Active', action: 'May merge into DiscountScheduleHelper' },
+            { name: 'DiscountScheduleHelper', direction: 'Outbound', type: 'Service', status: 'Shared', action: 'No change needed' },
+          ],
+          actionRationale: 'This renewal-specific variant has 5 active callers including a scheduled batch and trigger. All callers use a compatible interface. Redirect callers to preferred version; consider preserving RenewalDiscountPolicy logic as a tier parameter.',
         },
       },
     ],
