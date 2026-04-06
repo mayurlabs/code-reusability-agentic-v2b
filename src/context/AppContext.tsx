@@ -75,7 +75,7 @@ const ACTION_RESPONSES: Record<string, ActionResponse> = {
       "Here's a summary of your latest Code Reuse scan:\n\n**Org:** Northstar Retail Group\n**Assets Analyzed:** 1,842 across Apex, Triggers, LWC, and SOQL\n**Score:** 78 (up 9 points from your last scan)\n\nI found **12 groups of similar code** that could be simplified:\n• **3 high priority** — repeated pricing and discount logic\n• **5 medium priority** — shared validation and date helpers\n• **4 low priority** — older patterns with limited usage\n\nThe biggest opportunity is in your **pricing and discount logic** — 5 similar implementations exist across different teams.",
     actions: [
       { label: 'Tell me about the pricing logic', actionId: 'pricing-detail' },
-      { label: 'Which code can I safely remove?', actionId: 'safe-remove' },
+      { label: 'Which code can I consolidate or retire?', actionId: 'safe-remove' },
       { label: 'Show me what improved since last time', actionId: 'report-comparison' },
     ],
   },
@@ -86,7 +86,7 @@ const ACTION_RESPONSES: Record<string, ActionResponse> = {
       "Here's a summary of your latest Code Reuse scan:\n\n**Org:** Northstar Retail Group\n**Assets Analyzed:** 1,842 across Apex, Triggers, LWC, and SOQL\n**Score:** 78 (up 9 points from your last scan)\n\nI found **12 groups of similar code** that could be simplified:\n• **3 high priority** — repeated pricing and discount logic\n• **5 medium priority** — shared validation and date helpers\n• **4 low priority** — older patterns with limited usage\n\nThe biggest opportunity is in your **pricing and discount logic** — 5 similar implementations exist across different teams.",
     actions: [
       { label: 'Tell me about the pricing logic', actionId: 'pricing-detail' },
-      { label: 'Which code can I safely remove?', actionId: 'safe-remove' },
+      { label: 'Which code can I consolidate or retire?', actionId: 'safe-remove' },
       { label: 'Show me what improved since last time', actionId: 'report-comparison' },
     ],
   },
@@ -94,7 +94,7 @@ const ACTION_RESPONSES: Record<string, ActionResponse> = {
     processingMessage: 'Looking at pricing logic...',
     delay: 2000,
     content:
-      "Your org has **5 similar implementations** of pricing and discount calculation logic, spread across 3 teams:\n\n**Best version to keep:**\n`PricingRulesEngineV2.calculateDiscount()`\n• Owned by: Revenue Cloud Platform\n• Used 184,320 times in the last 30 days\n• Cleanest structure with the fewest dependencies\n\n**Other versions found:**\n\n1. `QuotePricingHelper.applyDiscountRules()`\n   Sales Operations — 48,112 uses/30d — Similar but lacks error handling\n\n2. `LegacyPriceCalcService.computePromoDiscount()`\n   Revenue Cloud — 1,904 uses/30d — Outdated, candidate for removal\n\n3. `DiscountRuleProcessor.evaluateThresholds()`\n   Core CRM — 18,602 uses/30d — Active but redundant\n\n4. `OpportunityPricingBranchHandler.applyDealDeskOverride()`\n   Sales Operations — 9,214 uses/30d — Trigger-based variant\n\nKeeping the best version and retiring the others could save ~420 lines of duplicate code.",
+      "Your org has **5 similar implementations** of pricing and discount calculation logic, spread across 3 teams:\n\n**Best version to keep:**\n`PricingRulesEngineV2.calculateDiscount()`\n• Owned by: Revenue Cloud Platform\n• Used 184,320 times in the last 30 days\n• Cleanest structure with the fewest dependencies\n\n**Other versions found:**\n\n1. `QuotePricingHelper.applyDiscountRules()`\n   Sales Operations — 48,112 uses/30d — Similar but lacks error handling\n\n2. `LegacyPriceCalcService.computePromoDiscount()`\n   Revenue Cloud — 1,904 uses/30d — Outdated, candidate for retirement after caller migration\n\n3. `DiscountRuleProcessor.evaluateThresholds()`\n   Core CRM — 18,602 uses/30d — Active but redundant\n\n4. `OpportunityPricingBranchHandler.applyDealDeskOverride()`\n   Sales Operations — 9,214 uses/30d — Trigger-based variant\n\nKeeping the best version and retiring the others could eliminate ~420 lines of redundant logic and reduce maintenance overhead.",
     actions: [
       { label: 'Is it safe to remove the legacy version?', actionId: 'safety-check' },
       { label: "Compare what's the same vs different", actionId: 'comparison' },
@@ -105,7 +105,7 @@ const ACTION_RESPONSES: Record<string, ActionResponse> = {
     processingMessage: 'Checking code usage patterns...',
     delay: 1800,
     content:
-      "Based on usage data, here are the implementations that could potentially be removed:\n\n**Low usage — review for removal:**\n• `LegacyPriceCalcService.computePromoDiscount()` — only 1,904 uses/month, but has 2 active callers that need to be redirected first\n• 3 date-formatting helpers with under 500 uses/month — functionally identical to existing utilities\n\n**Medium usage — merge into preferred version:**\n• `QuotePricingHelper.applyDiscountRules()` — 48,112 uses/month, actively used but redundant\n\n**Keep as-is:**\n• `PricingRulesEngineV2.calculateDiscount()` — highest usage, best structure\n• `DiscountRuleProcessor.evaluateThresholds()` — still being reviewed\n\nI'd recommend starting with the legacy pricing service — it has the lowest risk.",
+      "Based on usage data, here are the implementations that could potentially be consolidated or retired:\n\n**Low usage — review for retirement after migration:**\n• `LegacyPriceCalcService.computePromoDiscount()` — only 1,904 uses/month, but has 2 active callers that need to be redirected first\n• 3 date-formatting helpers with under 500 uses/month — functionally identical to existing utilities\n\n**Medium usage — consolidate into preferred version:**\n• `QuotePricingHelper.applyDiscountRules()` — 48,112 uses/month, actively used but redundant\n\n**Keep as-is:**\n• `PricingRulesEngineV2.calculateDiscount()` — highest usage, best structure\n• `DiscountRuleProcessor.evaluateThresholds()` — still being reviewed\n\nI'd recommend starting with the legacy pricing service — it has the lowest risk.",
     actions: [
       { label: 'Is it safe to remove the legacy version?', actionId: 'safety-check' },
       { label: 'Tell me about the pricing logic', actionId: 'pricing-detail' },
@@ -171,7 +171,7 @@ const ACTION_RESPONSES: Record<string, ActionResponse> = {
     processingMessage: 'Analyzing address validation code...',
     delay: 1500,
     content:
-      "Your org has **4 implementations** of address validation:\n\n**Best version to keep:**\n`AddressValidationOrchestrator.validate()`\n• Used across account creation, lead conversion, and contact imports\n• Strongest validation coverage\n\n**Other versions:**\n• `LeadAddressHelper.normalizeAndValidate()` — Apex, similar but missing country-code mapping\n• `CheckoutAddressValidator.runValidation()` — Apex, only used in checkout flow\n• `LwcAddressUtils.verifyPostalAddress()` — LWC JS, client-side regex fallback\n\nConsolidating could save ~280 lines. The LWC variant should call the shared service instead of doing its own validation.",
+      "Your org has **4 implementations** of address validation:\n\n**Best version to keep:**\n`AddressValidationOrchestrator.validate()`\n• Used across account creation, lead conversion, and contact imports\n• Strongest validation coverage\n\n**Other versions:**\n• `LeadAddressHelper.normalizeAndValidate()` — Apex, similar but missing country-code mapping\n• `CheckoutAddressValidator.runValidation()` — Apex, only used in checkout flow\n• `LwcAddressUtils.verifyPostalAddress()` — LWC JS, client-side regex fallback\n\nConsolidating could eliminate ~280 lines of redundant logic. The LWC variant should call the shared service instead of doing its own validation.",
     actions: [
       { label: 'What should I do next?', actionId: 'recommendations' },
       { label: 'Go back to other groups', actionId: 'other-groups' },
@@ -184,7 +184,7 @@ const ACTION_LABELS: Record<string, string> = {
   'analyze-org': 'Analyze my org for reuse opportunities',
   'summarize-report': 'Summarize my latest report',
   'pricing-detail': 'Tell me about the pricing logic',
-  'safe-remove': 'Which code can I safely remove?',
+  'safe-remove': 'Which code can I consolidate or retire?',
   'safety-check': 'Is it safe to remove the legacy version?',
   comparison: "Compare what's the same vs different",
   recommendations: 'What should I do next?',
@@ -202,10 +202,10 @@ function getFreeFormResponse(text: string): ActionResponse {
       processingMessage: 'Thinking...',
       delay: 1500,
       content:
-        'Based on the latest scan, your org has approximately **2,830 lines** of duplicate or near-duplicate code that could potentially be removed or consolidated. The biggest contributors are pricing logic (~420 lines), address validation (~280 lines), and quote sync wrappers (~350 lines).',
+        'Based on the latest scan, your org has approximately **2,830 lines** of redundant logic that could be consolidated or retired through standardization. The biggest contributors are pricing logic (~420 lines), address validation (~280 lines), and quote sync wrappers (~350 lines).',
       actions: [
         { label: 'Tell me about the pricing logic', actionId: 'pricing-detail' },
-        { label: 'Which code can I safely remove?', actionId: 'safe-remove' },
+        { label: 'Which code can I consolidate or retire?', actionId: 'safe-remove' },
         { label: 'Go back to summary', actionId: 'analyze-org' },
       ],
     };
@@ -233,7 +233,7 @@ function getFreeFormResponse(text: string): ActionResponse {
         "Before retiring any legacy code, I'd recommend: (1) verify all callers have been migrated, (2) check for indirect references through Flows and Process Builder, and (3) run a usage report for the past 30 days. The safest candidates right now are `LegacyPriceCalcService` and 3 date-formatting helpers with minimal usage.",
       actions: [
         { label: 'Is it safe to remove the legacy version?', actionId: 'safety-check' },
-        { label: 'Which code can I safely remove?', actionId: 'safe-remove' },
+        { label: 'Which code can I consolidate or retire?', actionId: 'safe-remove' },
         { label: 'Go back to summary', actionId: 'analyze-org' },
       ],
     };

@@ -118,6 +118,104 @@ const metaValueStyle: React.CSSProperties = {
   color: 'var(--sf-text)',
 };
 
+function DependencyGraph({ cluster }: { cluster: Cluster }) {
+  const membersWithDeps = cluster.members.filter(m => m.dependencies?.details?.length);
+  if (membersWithDeps.length === 0) return null;
+
+  const allInbound = new Map<string, { type: string; status: string }>();
+  const allOutbound = new Map<string, { type: string; status: string }>();
+
+  membersWithDeps.forEach(m => {
+    m.dependencies.details?.forEach(dep => {
+      if (dep.direction === 'Inbound') {
+        allInbound.set(dep.name, { type: dep.type, status: dep.status });
+      } else {
+        allOutbound.set(dep.name, { type: dep.type, status: dep.status });
+      }
+    });
+  });
+
+  const preferred = cluster.members.find(m => m.badge === 'Preferred');
+  const others = cluster.members.filter(m => m.badge !== 'Preferred');
+
+  const statusDotColor = (status: string) => {
+    switch (status) {
+      case 'Active': return '#2e844a';
+      case 'Low Usage': return '#fe9339';
+      case 'Legacy': return '#ea001e';
+      default: return '#969492';
+    }
+  };
+
+  return (
+    <div style={{ border: '1px solid #e0e6ed', borderRadius: 8, padding: 20, marginBottom: 16 }}>
+      <div style={{ ...labelStyle, marginBottom: 14, display: 'flex', alignItems: 'center' }}>
+        Dependency Overview <InfoTooltip text="Visual map of how callers flow into the preferred implementation and what it depends on. Helps assess migration safety at a glance." width={300} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 0, minHeight: 120 }}>
+        {/* Left — Inbound Callers */}
+        <div style={{ paddingRight: 20, borderRight: '2px dashed #c9d7e8' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#0176d3', marginBottom: 10 }}>
+            Inbound Callers
+          </div>
+          {allInbound.size === 0 ? (
+            <div style={{ fontSize: 12, color: 'var(--sf-text-muted)', fontStyle: 'italic' }}>None detected</div>
+          ) : (
+            [...allInbound.entries()].map(([name, info]) => (
+              <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, fontSize: 12 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: statusDotColor(info.status), flexShrink: 0 }} />
+                <code style={{ fontFamily: 'SFMono-Regular,Menlo,Monaco,Consolas,monospace', fontSize: 11, color: 'var(--sf-text)', wordBreak: 'break-all' }}>{name}</code>
+                <span style={{ color: 'var(--sf-text-muted)', fontSize: 10 }}>({info.type})</span>
+                <span style={{ color: '#0176d3', fontSize: 12, marginLeft: 'auto' }}>→</span>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Center — Preferred + Others */}
+        <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: 200 }}>
+          {preferred && (
+            <div style={{ border: '2px solid #2e844a', borderRadius: 8, padding: '12px 16px', background: '#f0faf4', textAlign: 'center', marginBottom: others.length > 0 ? 10 : 0, width: '100%' }}>
+              <code style={{ fontSize: 12, fontWeight: 700, color: '#2e844a', wordBreak: 'break-all', lineHeight: 1.3 }}>{preferred.name}</code>
+              <div style={{ fontSize: 10, color: 'var(--sf-text-secondary)', marginTop: 4 }}>{preferred.owner}</div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: '#2e844a', marginTop: 6, background: '#e6f9ed', padding: '2px 8px', borderRadius: 10 }}>✓ Preferred Standard</div>
+            </div>
+          )}
+          {others.map(m => {
+            const badgeColor = m.badge === 'Legacy' ? '#ea001e' : m.badge === 'Candidate' ? '#b86e00' : '#706e6b';
+            const badgeBg = m.badge === 'Legacy' ? '#fde8ea' : m.badge === 'Candidate' ? '#fef4e8' : '#f0f0f0';
+            return (
+              <div key={m.id} style={{ border: '1px solid #e0e4ea', borderRadius: 6, padding: '6px 12px', background: '#fafbfc', textAlign: 'center', marginBottom: 4, width: '100%' }}>
+                <code style={{ fontSize: 10, color: 'var(--sf-text)', wordBreak: 'break-all' }}>{m.name}</code>
+                <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 8, background: badgeBg, color: badgeColor, marginLeft: 6 }}>{m.badge}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Right — Outbound Dependencies */}
+        <div style={{ paddingLeft: 20, borderLeft: '2px dashed #c9d7e8' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#2e844a', marginBottom: 10 }}>
+            Outbound Dependencies
+          </div>
+          {allOutbound.size === 0 ? (
+            <div style={{ fontSize: 12, color: 'var(--sf-text-muted)', fontStyle: 'italic' }}>None detected</div>
+          ) : (
+            [...allOutbound.entries()].map(([name, info]) => (
+              <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, fontSize: 12 }}>
+                <span style={{ color: '#2e844a', fontSize: 12 }}>←</span>
+                <code style={{ fontFamily: 'SFMono-Regular,Menlo,Monaco,Consolas,monospace', fontSize: 11, color: 'var(--sf-text)', wordBreak: 'break-all' }}>{name}</code>
+                <span style={{ color: 'var(--sf-text-muted)', fontSize: 10 }}>({info.type})</span>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: statusDotColor(info.status), flexShrink: 0, marginLeft: 'auto' }} />
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ScanReport({ reportId, onBack }: ScanReportProps) {
   const { showToast } = useAppContext();
   const [loaded, setLoaded] = useState(false);
@@ -649,79 +747,10 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
             {/* Body — when expanded */}
             {isExpanded && (
               <div style={{ padding: '0 24px 24px', borderTop: '1px solid #eef1f5' }}>
-                {/* Why these belong together */}
-                <div style={{ marginTop: 16, marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 6, display: 'flex', alignItems: 'center' }}>
-                    Why these implementations were grouped <InfoTooltip text={TIP['why-grouped']} />
-                  </div>
-                  <div style={{
-                    background: '#f8f9fb',
-                    border: '1px solid #e0e4ea',
-                    borderRadius: 6,
-                    padding: 14,
-                    fontSize: 13,
-                    lineHeight: 1.6,
-                    color: 'var(--sf-text)',
-                  }}>
-                    These {cluster.memberCount} implementations share a common business purpose: {cluster.sharedIntent.toLowerCase()} They were grouped because they contain overlapping logic blocks ({cluster.commonBlocks.slice(0, 3).join(', ')}) and appear across related business flows ({cluster.whereItAppears.slice(0, 3).join(', ')}).
-                  </div>
-                </div>
-
-                {/* a. What this code does */}
-                <div style={{ marginTop: 16, marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 6 }}>What this code does</div>
-                  <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--sf-text)', margin: 0 }}>
-                    {cluster.sharedIntent}
-                  </p>
-                </div>
-
-                {/* b. Where it's used */}
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 8 }}>Where it's used</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {cluster.whereItAppears.map((loc, i) => (
-                      <span
-                        key={i}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          fontSize: 12,
-                          fontWeight: 500,
-                          padding: '3px 10px',
-                          borderRadius: 12,
-                          background: '#f0f4f8',
-                          color: 'var(--sf-text)',
-                        }}
-                      >
-                        <ArrowUpRight size={11} style={{ color: 'var(--sf-text-muted)' }} />
-                        {loc}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* c. Why it matters */}
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 6 }}>Why it matters</div>
-                  {cluster.whyItMatters.map((reason, i) => (
-                    <p
-                      key={i}
-                      style={{
-                        fontSize: 13,
-                        lineHeight: 1.6,
-                        color: 'var(--sf-text)',
-                        margin: '0 0 4px',
-                      }}
-                    >
-                      {reason}
-                    </p>
-                  ))}
-                </div>
-
-                {/* d. Best version to keep */}
+                {/* Best version to keep */}
                 <div
                   style={{
+                    marginTop: 16,
                     background: '#f9fbfd',
                     border: '1px solid #e0e6ed',
                     borderRadius: 6,
@@ -756,77 +785,10 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                   </div>
                 </div>
 
-                {/* e. What's the same across versions */}
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>
-                    What's the same across versions <InfoTooltip text={TIP['code-identical']} />
-                  </div>
-                  <div
-                    style={{
-                      background: '#f6faf6',
-                      border: '1px solid #d4edda',
-                      borderRadius: 6,
-                      padding: 14,
-                    }}
-                  >
-                    {cluster.commonBlocks.map((block, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: 8,
-                          fontSize: 13,
-                          lineHeight: 1.6,
-                          color: '#1b5e20',
-                          marginBottom: i < cluster.commonBlocks.length - 1 ? 4 : 0,
-                        }}
-                      >
-                        <CheckCircle2
-                          size={14}
-                          style={{ marginTop: 3, flexShrink: 0, color: '#2e844a' }}
-                        />
-                        {block}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                {/* Dependency Overview Graph */}
+                <DependencyGraph cluster={cluster} />
 
-                {/* f. What's different */}
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>What's different <InfoTooltip text={TIP['code-different']} /></div>
-                  <div
-                    style={{
-                      background: '#fff8f0',
-                      border: '1px solid #fde2c8',
-                      borderRadius: 6,
-                      padding: 14,
-                    }}
-                  >
-                    {cluster.differences.map((diff, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: 8,
-                          fontSize: 13,
-                          lineHeight: 1.6,
-                          color: '#7c4a03',
-                          marginBottom: i < cluster.differences.length - 1 ? 4 : 0,
-                        }}
-                      >
-                        <AlertTriangle
-                          size={14}
-                          style={{ marginTop: 3, flexShrink: 0, color: '#fe9339' }}
-                        />
-                        {diff}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* g. Dependencies — detailed per member */}
+                {/* Dependency Analysis — detailed per member */}
                 {hasDependencyData && (
                   <div style={{ marginBottom: 16 }}>
                     <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>
@@ -916,6 +878,194 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                   </div>
                 )}
 
+                {/* Impact Summary */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+                    Impact Summary <InfoTooltip text="Shows the full business impact of this repeated code — not just lines saved, but workflows affected, change risk, test efficiency, and dependency complexity." width={300} />
+                  </div>
+                  <div style={{
+                    border: '1px solid #d0dbe8',
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                  }}>
+                    {[
+                      { icon: '📐', label: 'Code', value: cluster.impact.codeLines, bg: '#f8f9fb' },
+                      { icon: '⚡', label: 'Workflows Affected', value: cluster.impact.workflows, bg: '#fff' },
+                      { icon: '🔄', label: 'Change Risk', value: cluster.impact.changeRisk, bg: '#f8f9fb' },
+                      { icon: '🧪', label: 'Test Surface', value: cluster.impact.testSurface, bg: '#fff' },
+                      { icon: '🔗', label: 'Dependencies', value: cluster.impact.dependencies, bg: '#f8f9fb' },
+                      ...(cluster.impact.governorLimits ? [{ icon: '⚠️', label: 'Governor Limits', value: cluster.impact.governorLimits, bg: '#fff8f0' }] : []),
+                    ].map((row, ri) => (
+                      <div key={ri} style={{
+                        display: 'grid',
+                        gridTemplateColumns: '28px 150px 1fr',
+                        alignItems: 'center',
+                        padding: '10px 16px',
+                        background: row.bg,
+                        borderBottom: '1px solid #eef1f5',
+                        fontSize: 13,
+                        gap: 8,
+                      }}>
+                        <span style={{ fontSize: 15, textAlign: 'center' }}>{row.icon}</span>
+                        <span style={{ fontWeight: 600, color: 'var(--sf-text)', fontSize: 12 }}>{row.label}</span>
+                        <span style={{ color: 'var(--sf-text-secondary)', lineHeight: 1.5 }}>{row.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recommended next steps */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>Recommended next steps <InfoTooltip text={TIP['recommendation']} /></div>
+                  <ol style={{ margin: 0, paddingLeft: 20 }}>
+                    {cluster.nextSteps.map((step, i) => (
+                      <li
+                        key={i}
+                        style={{
+                          fontSize: 13,
+                          lineHeight: 1.7,
+                          color: 'var(--sf-text)',
+                          marginBottom: 4,
+                        }}
+                      >
+                        {step}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+
+                {/* Why these belong together */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 6, display: 'flex', alignItems: 'center' }}>
+                    Why these implementations were grouped <InfoTooltip text={TIP['why-grouped']} />
+                  </div>
+                  <div style={{
+                    background: '#f8f9fb',
+                    border: '1px solid #e0e4ea',
+                    borderRadius: 6,
+                    padding: 14,
+                    fontSize: 13,
+                    lineHeight: 1.6,
+                    color: 'var(--sf-text)',
+                  }}>
+                    These {cluster.memberCount} implementations share a common business purpose: {cluster.sharedIntent.toLowerCase()} They were grouped because they contain overlapping logic blocks ({cluster.commonBlocks.slice(0, 3).join(', ')}) and appear across related business flows ({cluster.whereItAppears.slice(0, 3).join(', ')}).
+                  </div>
+                </div>
+
+                {/* Where it's used */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 8 }}>Where it's used</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {cluster.whereItAppears.map((loc, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: 12,
+                          fontWeight: 500,
+                          padding: '3px 10px',
+                          borderRadius: 12,
+                          background: '#f0f4f8',
+                          color: 'var(--sf-text)',
+                        }}
+                      >
+                        <ArrowUpRight size={11} style={{ color: 'var(--sf-text-muted)' }} />
+                        {loc}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Why it matters */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 6 }}>Why it matters</div>
+                  {cluster.whyItMatters.map((reason, i) => (
+                    <p
+                      key={i}
+                      style={{
+                        fontSize: 13,
+                        lineHeight: 1.6,
+                        color: 'var(--sf-text)',
+                        margin: '0 0 4px',
+                      }}
+                    >
+                      {reason}
+                    </p>
+                  ))}
+                </div>
+
+                {/* e. What's the same across versions */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+                    What's the same across versions <InfoTooltip text={TIP['code-identical']} />
+                  </div>
+                  <div
+                    style={{
+                      background: '#f6faf6',
+                      border: '1px solid #d4edda',
+                      borderRadius: 6,
+                      padding: 14,
+                    }}
+                  >
+                    {cluster.commonBlocks.map((block, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 8,
+                          fontSize: 13,
+                          lineHeight: 1.6,
+                          color: '#1b5e20',
+                          marginBottom: i < cluster.commonBlocks.length - 1 ? 4 : 0,
+                        }}
+                      >
+                        <CheckCircle2
+                          size={14}
+                          style={{ marginTop: 3, flexShrink: 0, color: '#2e844a' }}
+                        />
+                        {block}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* f. What's different */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>What's different <InfoTooltip text={TIP['code-different']} /></div>
+                  <div
+                    style={{
+                      background: '#fff8f0',
+                      border: '1px solid #fde2c8',
+                      borderRadius: 6,
+                      padding: 14,
+                    }}
+                  >
+                    {cluster.differences.map((diff, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 8,
+                          fontSize: 13,
+                          lineHeight: 1.6,
+                          color: '#7c4a03',
+                          marginBottom: i < cluster.differences.length - 1 ? 4 : 0,
+                        }}
+                      >
+                        <AlertTriangle
+                          size={14}
+                          style={{ marginTop: 3, flexShrink: 0, color: '#fe9339' }}
+                        />
+                        {diff}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Code view for each member */}
                 {hasMembers && cluster.members.some(m => m.codeLines && m.codeLines.length > 0) && (
                   <div style={{ marginBottom: 16 }}>
@@ -970,63 +1120,7 @@ export default function ScanReport({ reportId, onBack }: ScanReportProps) {
                   </div>
                 )}
 
-                {/* h. Impact — multi-dimensional */}
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>
-                    Impact Summary <InfoTooltip text="Shows the full business impact of this repeated code — not just lines saved, but workflows affected, change risk, test efficiency, and dependency complexity." width={300} />
-                  </div>
-                  <div style={{
-                    border: '1px solid #d0dbe8',
-                    borderRadius: 8,
-                    overflow: 'hidden',
-                  }}>
-                    {[
-                      { icon: '📐', label: 'Code', value: cluster.impact.codeLines, bg: '#f8f9fb' },
-                      { icon: '⚡', label: 'Workflows Affected', value: cluster.impact.workflows, bg: '#fff' },
-                      { icon: '🔄', label: 'Change Risk', value: cluster.impact.changeRisk, bg: '#f8f9fb' },
-                      { icon: '🧪', label: 'Test Surface', value: cluster.impact.testSurface, bg: '#fff' },
-                      { icon: '🔗', label: 'Dependencies', value: cluster.impact.dependencies, bg: '#f8f9fb' },
-                      ...(cluster.impact.governorLimits ? [{ icon: '⚠️', label: 'Governor Limits', value: cluster.impact.governorLimits, bg: '#fff8f0' }] : []),
-                    ].map((row, ri) => (
-                      <div key={ri} style={{
-                        display: 'grid',
-                        gridTemplateColumns: '28px 150px 1fr',
-                        alignItems: 'center',
-                        padding: '10px 16px',
-                        background: row.bg,
-                        borderBottom: '1px solid #eef1f5',
-                        fontSize: 13,
-                        gap: 8,
-                      }}>
-                        <span style={{ fontSize: 15, textAlign: 'center' }}>{row.icon}</span>
-                        <span style={{ fontWeight: 600, color: 'var(--sf-text)', fontSize: 12 }}>{row.label}</span>
-                        <span style={{ color: 'var(--sf-text-secondary)', lineHeight: 1.5 }}>{row.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* i. Recommended next steps */}
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ ...labelStyle, marginBottom: 8, display: 'flex', alignItems: 'center' }}>Recommended next steps <InfoTooltip text={TIP['recommendation']} /></div>
-                  <ol style={{ margin: 0, paddingLeft: 20 }}>
-                    {cluster.nextSteps.map((step, i) => (
-                      <li
-                        key={i}
-                        style={{
-                          fontSize: 13,
-                          lineHeight: 1.7,
-                          color: 'var(--sf-text)',
-                          marginBottom: 4,
-                        }}
-                      >
-                        {step}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-
-                {/* j. Why we recommend this */}
+                {/* Why we recommend this */}
                 <div style={{ marginBottom: hasMembers && cluster.id === 'cl-001' ? 16 : 0 }}>
                   <div style={{ ...labelStyle, marginBottom: 8 }}>Why we recommend this</div>
                   <ul style={{ margin: 0, paddingLeft: 20 }}>
